@@ -97,6 +97,7 @@ public partial class StartMenuWindow : Window
             Animate(0, 1, 24, 0, 200);
             LiveTick(force: true);          // open with live faces already up
             _liveTimer.Start();
+            App.Catalog.RefreshWebAssetsAsync();   // refresh website favicons / previews in the background
         }
         else if (wasClosing) Animate(Root.Opacity, 1, Slide.Y, 0, 120);   // caught mid fade-out
         Native.ForceForeground(_hwnd);
@@ -151,8 +152,12 @@ public partial class StartMenuWindow : Window
             case Native.ABE_LEFT: left = Math.Max(tb.Right, work.Left); top = work.Bottom - h; break;
             case Native.ABE_RIGHT: left = Math.Min(tb.Left, work.Right) - w; top = work.Bottom - h; break;
         }
-        if (App.Settings.OpenAtStartButton && edge is Native.ABE_TOP or Native.ABE_BOTTOM && TaskbarInfo.StartButton is { } sb)
-            left = sb.Left;
+        // Open where the Start button actually is: centred on it. A centred taskbar puts the menu in
+        // the middle, a left-aligned one pushes it against the left edge once clamped below.
+        if (!App.Settings.OpenAtCorner && edge is Native.ABE_TOP or Native.ABE_BOTTOM && TaskbarInfo.StartButton is { } sb)
+            left = sb.Left + sb.Width / 2 - w / 2;
+
+        left = Math.Clamp(left, work.Left, Math.Max(work.Left, work.Right - w));
 
         left = Math.Clamp(left, mon.rcMonitor.Left, Math.Max(mon.rcMonitor.Left, mon.rcMonitor.Right - w));
         top = Math.Clamp(top, mon.rcMonitor.Top, Math.Max(mon.rcMonitor.Top, mon.rcMonitor.Bottom - h));
@@ -932,6 +937,21 @@ public partial class StartMenuWindow : Window
             case LiveKind.Clock:
                 var (cb, cs) = LiveTiles.ClockFace(now);
                 t.LiveTitle = string.Empty; t.LiveBig = cb; t.LiveSub = cs; t.LiveImage = null;
+                break;
+            case LiveKind.Website:
+                if (t.App.ThumbPath is { } thumb && File.Exists(thumb))
+                {
+                    int w = (int)Math.Ceiling(t.Width * VisualTreeHelper.GetDpi(this).DpiScaleX);
+                    Task.Run(() => LiveTiles.LoadImage(thumb, w)).ContinueWith(task => Dispatcher.BeginInvoke(() =>
+                    {
+                        if (task.Result is { } img) t.LiveImage = img;
+                    }));
+                }
+                else
+                {
+                    t.LiveTitle = string.Empty; t.LiveBig = string.Empty; t.LiveImage = null;
+                    t.LiveSub = Uri.TryCreate(t.App.CustomTarget, UriKind.Absolute, out var u) ? u.Host : t.App.Name;
+                }
                 break;
             case LiveKind.Photos:
                 if (!newPhoto && t.LiveImage != null) break;

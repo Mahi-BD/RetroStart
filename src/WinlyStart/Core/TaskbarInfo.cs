@@ -44,7 +44,8 @@ internal static class TaskbarInfo
     {
         get
         {
-            if (Environment.TickCount64 - _startButtonStamp > 15_000) RefreshStartButtonAsync();
+            // the taskbar re-centres whenever an app opens or closes, so keep this fresh
+            if (Environment.TickCount64 - _startButtonStamp > 2_000) RefreshStartButtonAsync();
             return _startButton;
         }
     }

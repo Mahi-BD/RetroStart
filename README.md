@@ -39,7 +39,7 @@ the app and Windows 11 is exactly as it was.
 | Live tiles | ✅ Winly Start's own for Calendar, Clock and Photos (Windows 11 has no live-tile platform) |
 
 Beyond Windows 10: right-click empty board space to **add any program, file, shortcut or website** as a
-tile, drag group headers to **reorder groups**, drag the corner grip to **resize** the menu, and turn on
+tile (websites use the site's favicon as their icon and its own preview image as a live tile), drag group headers to **reorder groups**, drag the corner grip to **resize** the menu, and turn on
 a **Calendar** button (plus Documents/Downloads/Music/Videos/Network/… ) for the left rail in Settings.
 The calendar shows three months, scales with its (remembered) window size, keeps a note per day
 (amber = has a note), and imports/exports all notes as JSON or iCalendar `.ics`.

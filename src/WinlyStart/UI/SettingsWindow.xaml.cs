@@ -19,7 +19,7 @@ public partial class SettingsWindow : Window
         ThemeBox.SelectedIndex = (int)s.Theme;
         ColumnsBox.SelectedIndex = s.TileColumns == 8 ? 1 : 0;
         HeightSlider.Value = s.MenuHeight;
-        AtStartButton.IsChecked = s.OpenAtStartButton;
+        AtCorner.IsChecked = s.OpenAtCorner;
         Recent.IsChecked = s.ShowRecentlyAdded;
         MostUsed.IsChecked = s.ShowMostUsed;
         Trim.IsChecked = s.TrimMemoryWhenHidden;
@@ -97,7 +97,7 @@ public partial class SettingsWindow : Window
         s.Theme = (ThemeMode)Math.Max(0, ThemeBox.SelectedIndex);
         s.TileColumns = ColumnsBox.SelectedIndex == 1 ? 8 : 6;
         s.MenuHeight = (int)HeightSlider.Value;
-        s.OpenAtStartButton = AtStartButton.IsChecked == true;
+        s.OpenAtCorner = AtCorner.IsChecked == true;
         s.ShowRecentlyAdded = Recent.IsChecked == true;
         s.ShowMostUsed = MostUsed.IsChecked == true;
         s.TrimMemoryWhenHidden = Trim.IsChecked == true;

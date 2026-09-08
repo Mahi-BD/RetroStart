@@ -20,6 +20,10 @@ public sealed class AppEntry : INotifyPropertyChanged
     public bool IsPackaged { get; init; }
     /// <summary>Set for user-added items (an .exe, a file, or a URL); launched with the shell.</summary>
     public string? CustomTarget { get; init; }
+    /// <summary>Cached preview image for a website tile's live face, if one has been fetched.</summary>
+    public string? ThumbPath { get; set; }
+    public bool IsWebsite => CustomTarget is { } t &&
+        (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || t.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
     public DateTime Created { get; init; }
     public int Launches { get; set; }
 
@@ -140,6 +144,36 @@ public sealed class AppCatalog
         return entry;
     }
 
+    /// <summary>Fetches favicons and live-tile previews for website items, then refreshes the UI.
+    /// Cheap on repeat: WebAssets serves from its cache until the thumbnail lifetime expires.</summary>
+    public void RefreshWebAssetsAsync()
+    {
+        var sites = Custom.Items.Where(c => c.Target.StartsWith("http", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (sites.Count == 0) return;
+        _ = Task.Run(async () =>
+        {
+            bool changed = false;
+            foreach (var c in sites)
+            {
+                if (c.IconPath.Length == 0 || !File.Exists(c.IconPath))
+                {
+                    if (await WebAssets.GetIconAsync(c.Target).ConfigureAwait(false) is { } icon) { c.IconPath = icon; changed = true; }
+                }
+                string? thumb = await WebAssets.GetThumbnailAsync(c.Target).ConfigureAwait(false);
+                if (thumb != null && thumb != c.ThumbPath) { c.ThumbPath = thumb; changed = true; }
+                else if (thumb != null)
+                {
+                    // same file, refreshed contents → let the tile know
+                    var entry = Find(c.Id);
+                    if (entry != null) entry.ThumbPath = thumb;
+                }
+            }
+            if (!changed) return;
+            Store.Save("custom.json", Custom, JsonCtx.Default.CustomItems);
+            Application.Current?.Dispatcher.BeginInvoke(ScanAsync);
+        });
+    }
+
     public void RemoveCustom(string id)
     {
         if (Custom.Items.RemoveAll(c => c.Id == id) == 0) return;
@@ -196,9 +230,12 @@ public sealed class AppCatalog
         foreach (var c in Custom.Items)
         {
             if (string.IsNullOrWhiteSpace(c.Id) || string.IsNullOrWhiteSpace(c.Target)) continue;
+            // a cached favicon feeds the normal icon pipeline; otherwise the default glyph shows
+            bool hasIcon = c.IconPath.Length > 0 && File.Exists(c.IconPath);
             result.Add(new AppEntry
             {
-                Id = c.Id, Name = c.Name, ParsingName = c.Target, CustomTarget = c.Target,
+                Id = c.Id, Name = c.Name, ParsingName = hasIcon ? "img:" + c.IconPath : c.Target, CustomTarget = c.Target,
+                ThumbPath = c.ThumbPath.Length > 0 && File.Exists(c.ThumbPath) ? c.ThumbPath : null,
                 Created = DateTime.MinValue, Launches = Usage.Launches.GetValueOrDefault(c.Id),
             });
         }

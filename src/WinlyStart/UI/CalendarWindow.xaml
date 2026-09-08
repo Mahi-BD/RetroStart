@@ -62,8 +62,6 @@
                 <Button Style="{StaticResource NavButton}" Content="&#xE76C;" Margin="4,0,10,0" Click="Next_Click" ToolTip="Next month"/>
                 <Button Content="Today" MinWidth="80" Click="Today_Click"/>
             </StackPanel>
-            <TextBlock x:Name="HeaderText" Style="{StaticResource DlgH1}" FontSize="20"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
             <TextBlock x:Name="CountText" Style="{StaticResource DlgCaption}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         </Grid>
 

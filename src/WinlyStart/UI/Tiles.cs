@@ -7,7 +7,7 @@ namespace WinlyStart.UI;
 
 /// <summary>Which live content a tile can show. Windows 11 has no live-tile platform, so these are
 /// Winly Start's own faces for the apps where it has real data.</summary>
-public enum LiveKind { None, Calendar, Clock, Photos }
+public enum LiveKind { None, Calendar, Clock, Photos, Website }
 
 /// <summary>One tile on the board. Geometry is in 48 px units with 4 px gutters, like Windows 10.</summary>
 public sealed class TileVm : INotifyPropertyChanged
@@ -36,6 +36,7 @@ public sealed class TileVm : INotifyPropertyChanged
         App.Id == "builtin:calendar" ? LiveKind.Calendar
         : App.Id.Contains("Microsoft.WindowsAlarms", StringComparison.OrdinalIgnoreCase) ? LiveKind.Clock
         : App.Id.Contains("Microsoft.Windows.Photos", StringComparison.OrdinalIgnoreCase) ? LiveKind.Photos
+        : App.IsWebsite ? LiveKind.Website
         : LiveKind.None;
     /// <summary>Small tiles were never live on Windows 10 either.</summary>
     public bool CanBeLive => Kind != LiveKind.None && _size != TileSize.Small;

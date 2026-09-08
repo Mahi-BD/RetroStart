@@ -11,7 +11,7 @@
     <AssemblyName>WinlyStart</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/WinlyStart.ico</ApplicationIcon>
-    <Version>0.1.0</Version>
+    <Version>1.4.0</Version>
     <Authors>Winly Start contributors</Authors>
     <Product>Winly Start</Product>
     <Description>The Windows 10 Start menu, back on Windows 11.</Description>

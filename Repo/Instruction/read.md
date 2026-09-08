@@ -248,6 +248,26 @@ Sixth round (verified live):
   `UserInfo.PicturePath` prefers the override, `UserInfo.WindowsPicturePath` ignores it, and the rail
   reloads via `LoadUserPicture()` on save.
 
+Seventh round — v1.4.0 (verified live):
+- **Website tiles get the site's favicon and a live preview.** `Core/WebAssets.cs` fetches the
+  favicon (declared `<link rel=icon>`, else `/favicon.ico`) and the page's own preview image
+  (`og:image` / `twitter:image`), caching both under `%LocalAppData%\WinlyStart\web`. The favicon
+  becomes the tile/list icon and the preview is the live face, refreshed at most every 30 min
+  (`WebAssets.ThumbnailLifetime`) while the menu is open. **Note:** we use the image the site
+  publishes as its own thumbnail rather than embedding a browser to screenshot the page — that would
+  mean a WebView2 dependency and a large working set, against the house rules.
+  ⚠️ A cached favicon must be decoded with `ShellIcons.LoadFile` (`img:` prefix): putting the PNG
+  through `IShellItemImageFactory` returns the generic "picture file" icon, not the image.
+- **The menu opens where the Start button is.** `Position()` now centres the menu on the Start
+  button for top/bottom taskbars (a centred taskbar centres the menu; a left-aligned one lands left
+  once clamped to the work area). `Settings.OpenAtCorner` forces the old corner behaviour.
+- **Start-button click no longer falls through to the Windows menu.** The cached button rectangle
+  went stale because the taskbar re-centres whenever an app opens or closes: the cache TTL is now 2 s,
+  it refreshes on every foreground change and on any near-miss click, and the hit test has 3 px of
+  slack. Verified with 8 consecutive clicks and 6 Windows-key taps — every one opened Winly Start.
+- **Calendar month moved into the title bar** ("Calendar — September 2026"), freeing the header row.
+- Version is **1.4.0** (csproj + manifest).
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

@@ -38,6 +38,24 @@ internal static class LiveTiles
     public static (string big, string sub) ClockFace(DateTime now) =>
         (now.ToString("t", CultureInfo.CurrentCulture), now.ToString("ddd, d MMM", CultureInfo.CurrentCulture));
 
+    /// <summary>Decodes a cached image file (website preview) at the requested width.</summary>
+    public static BitmapSource? LoadImage(string path, int decodeWidth)
+    {
+        try
+        {
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = new Uri(path);
+            bi.DecodePixelWidth = Math.Max(32, decodeWidth);
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.CreateOptions = BitmapCreateOptions.IgnoreImageCache;   // the file is refreshed in place
+            bi.EndInit();
+            bi.Freeze();
+            return bi;
+        }
+        catch { return null; }
+    }
+
     /// <summary>Next picture from the user's Pictures folder (top level + one level down), decoded small and cached.</summary>
     private static readonly object _photoLock = new();
 

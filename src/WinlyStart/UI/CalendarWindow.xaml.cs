@@ -64,7 +64,7 @@ public partial class CalendarWindow : Window
             Grid.SetColumn(panel, i + 1);
             MonthsHost.Children.Add(panel);
         }
-        HeaderText.Text = _month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
+        Title = "Calendar — " + _month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
         UpdateCount();
         Dispatcher.BeginInvoke(ScaleDayText, DispatcherPriority.Loaded);
     }

@@ -32,6 +32,25 @@ public static class ShellIcons
         finally { if (hbm != IntPtr.Zero) Native.DeleteObject(hbm); }
     }
 
+    /// <summary>Decode an image file directly. Used for cached website favicons: routing those through
+    /// the shell returns the generic "picture file" icon rather than the image itself.</summary>
+    public static BitmapSource? LoadFile(string path, int pixels)
+    {
+        try
+        {
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = new Uri(path);
+            bi.DecodePixelWidth = Math.Max(16, pixels);
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bi.EndInit();
+            bi.Freeze();
+            return bi;
+        }
+        catch { return null; }
+    }
+
     /// <summary>Decode a packed application resource (PNG) at the requested size.</summary>
     public static BitmapSource? LoadResource(string relativePath, int pixels)
     {
@@ -117,7 +136,9 @@ public static class IconLoader
             int px = (int)Math.Round(size * _dpiScale);
             var bmp = app.ParsingName.StartsWith("res:", StringComparison.Ordinal)
                 ? ShellIcons.LoadResource(app.ParsingName[4..], px)
-                : ShellIcons.Load(app.ParsingName, px);
+                : app.ParsingName.StartsWith("img:", StringComparison.Ordinal)
+                    ? ShellIcons.LoadFile(app.ParsingName[4..], px)
+                    : ShellIcons.Load(app.ParsingName, px);
             Pending.TryRemove((app.Id, size), out _);
             if (bmp == null) continue;
             Application.Current?.Dispatcher.BeginInvoke(() => app.SetIcon(size, bmp));

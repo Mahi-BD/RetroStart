@@ -120,9 +120,12 @@ public sealed class StartHook : IDisposable
         {
             var m = Marshal.PtrToStructure<Native.MSLLHOOKSTRUCT>(lParam);
             var r = TaskbarInfo.StartButton;
+            if (r is { } probe && !probe.Contains(m.pt.X, m.pt.Y)) TaskbarInfo.RefreshStartButtonAsync();
             if (DebugEnabled)
                 Debug($"click ({m.pt.X},{m.pt.Y}) startBtn={(r is { } rr ? $"{rr.Left},{rr.Top} {rr.Width}x{rr.Height}" : "null")} hit={(r is { } h && h.Contains(m.pt.X, m.pt.Y))}");
-            if (r is { } rect && rect.Contains(m.pt.X, m.pt.Y))
+            // a couple of pixels of slack: the button re-centres constantly and a near-miss used to
+            // fall through to the Windows 11 menu
+            if (r is { } rect && Inflate(rect, 3).Contains(m.pt.X, m.pt.Y))
             {
                 _swallowUp = true;
                 Post(Toggle);
@@ -137,8 +140,13 @@ public sealed class StartHook : IDisposable
         return Native.CallNextHookEx(_mouseHook, code, wParam, lParam);
     }
 
+    private static Native.RECT Inflate(Native.RECT r, int by) =>
+        new() { Left = r.Left - by, Top = r.Top - by, Right = r.Right + by, Bottom = r.Bottom + by };
+
     private void WinEventProc(IntPtr hook, uint evt, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
     {
+        // apps coming and going re-centre the taskbar, which moves the Start button
+        TaskbarInfo.RefreshStartButtonAsync();
         if (!FallbackEnabled || idObject != 0 || hwnd == IntPtr.Zero) return;
         if (Native.GetClassName(hwnd) != "Windows.UI.Core.CoreWindow") return;
         Native.GetWindowThreadProcessId(hwnd, out uint pid);

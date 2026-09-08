@@ -21,8 +21,8 @@ public sealed class Settings
     public int MenuHeight { get; set; } = 640;
     public bool ShowRecentlyAdded { get; set; } = true;
     public bool ShowMostUsed { get; set; } = true;
-    /// <summary>Align the menu under the Windows 11 Start button instead of the screen corner.</summary>
-    public bool OpenAtStartButton { get; set; }
+    /// <summary>Force the menu to the screen corner instead of following the Start button.</summary>
+    public bool OpenAtCorner { get; set; }
     public bool TrimMemoryWhenHidden { get; set; } = true;
     /// <summary>Which shortcuts show in the left rail.</summary>
     public RailSettings Rail { get; set; } = new();
@@ -52,6 +52,10 @@ public sealed class CustomItem
     public string Id { get; set; } = string.Empty;      // "custom:&lt;guid&gt;"
     public string Name { get; set; } = string.Empty;
     public string Target { get; set; } = string.Empty;  // full path or URL
+    /// <summary>Cached favicon for a website item (used as its icon).</summary>
+    public string IconPath { get; set; } = string.Empty;
+    /// <summary>Cached preview image for a website item's live tile.</summary>
+    public string ThumbPath { get; set; } = string.Empty;
 }
 
 public sealed class CustomItems
