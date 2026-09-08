@@ -1,5 +1,9 @@
 # Retro Start
 
+[![build](https://github.com/Mahi-BD/RetroStart/actions/workflows/build.yml/badge.svg)](https://github.com/Mahi-BD/RetroStart/actions/workflows/build.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
+
 **The Windows 10 Start menu, back on Windows 11.**
 
 Retro Start is a small, open-source (MIT) .NET 8 app that brings the Windows 10 Start menu
