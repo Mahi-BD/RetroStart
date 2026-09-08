@@ -192,6 +192,22 @@ Third round (all verified live):
   the Settings window, matching Windows 10's "Choose which folders appear on Start".
 - **Calendar.** Ticking Calendar adds a rail button that opens `CalendarWindow`.
 
+Fourth round (verified live):
+- **Close buttons did nothing** on Settings / About / Calendar: they relied on `IsCancel`, which only
+  closes windows opened with `ShowDialog()`; these are opened with `Show()`. Each now has an explicit
+  `Close()` handler. (InputWindow is modal, so its Cancel was already fine.)
+- **Calendar rewritten** (`CalendarWindow`): previous · current · next month side by side, custom
+  day cells (not the WPF `Calendar` control, which neither scales nor colours per day). The month
+  grids sit in a `Viewbox` so every element — day buttons included — scales with the window; the
+  window is resizable and its size is remembered in `calendar.json` (recorded on `SizeChanged` *and*
+  snapshotted on `Closing`, so it persists even if the user never resized that session). Clicking a
+  day shows a note editor on the right (autosave, 400 ms debounce); days with a note are amber, the
+  selected day uses the accent (amber border when it also has a note), today has an accent border.
+- **Import / export** of all notes as JSON (exact round trip) or iCalendar `.ics` (one all-day
+  `VEVENT` per note; SUMMARY = first line, DESCRIPTION = whole note). Import accepts all-day and
+  timed `DTSTART`, unfolds continuation lines, prefers DESCRIPTION over SUMMARY, and appends when a
+  day already has a note. Verified: two-event `.ics` imported (merge + timed event), `.ics` exported.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

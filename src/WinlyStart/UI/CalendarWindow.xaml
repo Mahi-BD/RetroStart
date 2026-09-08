@@ -1,15 +1,110 @@
 <Window x:Class="WinlyStart.UI.CalendarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Calendar" SizeToContent="WidthAndHeight" ResizeMode="NoResize"
-        WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
-        FontFamily="Segoe UI" UseLayoutRounding="True">
-    <StackPanel Margin="16">
-        <TextBlock x:Name="TodayText" FontSize="18" FontWeight="SemiBold" Margin="4,0,0,10"/>
-        <Calendar x:Name="Cal" DisplayDateChanged="Cal_Changed" SelectedDatesChanged="Cal_Changed"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="Today" Width="90" Height="28" Margin="0,0,8,0" Click="Today_Click"/>
-            <Button Content="Close" Width="90" Height="28" IsCancel="True"/>
-        </StackPanel>
-    </StackPanel>
+        Title="Calendar" Width="1000" Height="600" MinWidth="760" MinHeight="460"
+        ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        SizeChanged="Window_SizeChanged" Closing="Window_Closing">
+    <Window.Resources>
+        <!-- flat day cell so Background / BorderBrush set from code show exactly as set -->
+        <Style x:Key="DayButton" TargetType="Button">
+            <Setter Property="Margin" Value="2"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
+                            <Grid>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Border x:Name="Hover" Background="#22000000" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Hover" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- header: navigation + title -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource NavButton}" Content="&#xE76B;" Click="Prev_Click" ToolTip="Previous month"/>
+                <Button Style="{StaticResource NavButton}" Content="&#xE76C;" Margin="4,0,10,0" Click="Next_Click" ToolTip="Next month"/>
+                <Button Content="Today" Width="72" Height="30" Click="Today_Click"/>
+            </StackPanel>
+            <TextBlock x:Name="HeaderText" FontSize="18" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock x:Name="CountText" Opacity="0.6" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- three months (scale with the window) + note panel -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <Viewbox Grid.Column="0" Stretch="Uniform">
+                <Grid x:Name="MonthsHost" Width="960" Height="620">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                </Grid>
+            </Viewbox>
+
+            <Border Grid.Column="1" Margin="14,0,0,0" Padding="12" CornerRadius="4"
+                    Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="1">
+                <DockPanel>
+                    <TextBlock x:Name="NoteTitle" DockPanel.Dock="Top" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+                        <Button DockPanel.Dock="Right" Content="Delete note" Width="92" Height="26" Click="DeleteNote_Click"/>
+                        <TextBlock x:Name="SavedText" Opacity="0.6" VerticalAlignment="Center" Text="Saved automatically"/>
+                    </DockPanel>
+                    <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" Padding="6"
+                             VerticalScrollBarVisibility="Auto" TextChanged="NoteBox_TextChanged"
+                             ToolTip="Write a note for the selected day. Days with notes turn amber."/>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- footer -->
+        <DockPanel Grid.Row="2" Margin="0,12,0,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Import…" Width="92" Height="30" Margin="0,0,8,0" Click="Import_Click"
+                        ToolTip="Import notes from a .json or .ics (iCalendar) file"/>
+                <Button Content="Export…" Width="92" Height="30" Margin="0,0,8,0" Click="Export_Click"
+                        ToolTip="Export all notes to .json or .ics (iCalendar)"/>
+                <Button Content="Close" Width="92" Height="30" Click="Close_Click"/>
+            </StackPanel>
+            <TextBlock Opacity="0.55" VerticalAlignment="Center"
+                       Text="Click a day to write a note · amber = has a note · window size is remembered"/>
+        </DockPanel>
+    </Grid>
 </Window>

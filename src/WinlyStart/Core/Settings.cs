@@ -57,6 +57,14 @@ public sealed class CustomItems
     public List<CustomItem> Items { get; set; } = new();
 }
 
+/// <summary>Calendar notes ("yyyy-MM-dd" → text) and the remembered window size. calendar.json.</summary>
+public sealed class CalendarData
+{
+    public Dictionary<string, string> Notes { get; set; } = new();
+    public double Width { get; set; }
+    public double Height { get; set; }
+}
+
 public sealed class Tile
 {
     public string AppId { get; set; } = string.Empty;
@@ -89,6 +97,7 @@ public sealed class UsageData
 [JsonSerializable(typeof(TileLayout))]
 [JsonSerializable(typeof(UsageData))]
 [JsonSerializable(typeof(CustomItems))]
+[JsonSerializable(typeof(CalendarData))]
 internal partial class JsonCtx : JsonSerializerContext { }
 
 /// <summary>Tiny JSON file store. Reflection-free (source generated) to keep the working set small.</summary>

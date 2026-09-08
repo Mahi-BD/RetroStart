@@ -15,6 +15,8 @@ public partial class AboutWindow : Window
         DataPathText.Text = "Settings and tiles: " + Store.Dir;
     }
 
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
     private void Link_Click(object sender, RequestNavigateEventArgs e)
     {
         Launcher.Start(e.Uri.ToString());

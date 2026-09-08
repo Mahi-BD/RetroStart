@@ -33,6 +33,9 @@ public partial class SettingsWindow : Window
         RailCalendar.IsChecked = r.Calendar;
     }
 
+    // IsCancel only closes windows opened with ShowDialog(); this window is shown with Show().
+    private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         var s = App.Settings;
