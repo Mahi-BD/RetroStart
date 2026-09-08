@@ -12,6 +12,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
+        <Style TargetType="ScrollViewer" BasedOn="{StaticResource AutoHideScroll}"/>
         <Style TargetType="ContextMenu" BasedOn="{StaticResource Win10ContextMenu}"/>
         <Style TargetType="MenuItem" BasedOn="{StaticResource Win10MenuItem}"/>
         <Style TargetType="Separator" BasedOn="{StaticResource Win10Separator}"/>
@@ -44,8 +45,25 @@
                     </ContextMenu>
                 </Border.ContextMenu>
                 <StackPanel Orientation="Horizontal" Margin="{Binding IndentMargin}">
-                    <Image Source="{Binding App.Icon}" Width="24" Height="24" VerticalAlignment="Center"
-                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Grid Width="24" Height="24" VerticalAlignment="Center">
+                        <!-- default app glyph whenever the shell gives us no icon (or it hasn't loaded yet) -->
+                        <TextBlock Text="&#xECAA;" FontFamily="{StaticResource Rs.Glyphs}" FontSize="18"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource Rs.TextSecondary}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding App.Icon}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <Image Source="{Binding App.Icon}" Width="24" Height="24"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Grid>
                     <TextBlock Text="{Binding App.Name}" Margin="12,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
             </Border>
@@ -99,6 +117,20 @@
                     </ContextMenu>
                 </Border.ContextMenu>
                 <Grid>
+                    <TextBlock Text="&#xECAA;" FontFamily="{StaticResource Rs.Glyphs}"
+                               FontSize="{Binding ImageWidth}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Rs.AccentText}" Opacity="0.75">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Image}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                     <Image Source="{Binding Image}" Width="{Binding ImageWidth}" Height="{Binding ImageHeight}"
                            HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -130,10 +162,32 @@
 
         <DataTemplate DataType="{x:Type ui:TileGroupVm}">
             <StackPanel Margin="0,0,0,12">
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}" Height="36" Padding="0" Margin="0,0,0,4"
-                         Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Rs.Text}"
-                         CaretBrush="{DynamicResource Rs.Text}" FontSize="14" VerticalContentAlignment="Center"
-                         LostFocus="GroupName_LostFocus" KeyDown="GroupName_KeyDown" ToolTip="Click to name this group"/>
+                <!-- Windows 10 group header: click to name/rename; shows a "Name group" hint while empty -->
+                <Grid Height="36" Margin="0,0,0,4" HorizontalAlignment="Left" MinWidth="220">
+                    <TextBox x:Name="GroupNameBox" Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                             Padding="2,0" Background="Transparent" BorderThickness="0"
+                             Foreground="{DynamicResource Rs.Text}" CaretBrush="{DynamicResource Rs.Text}"
+                             FontSize="14" VerticalContentAlignment="Center" MaxLength="64"
+                             LostFocus="GroupName_LostFocus" KeyDown="GroupName_KeyDown"
+                             ToolTip="Click to name this group"/>
+                    <TextBlock Text="Name group" IsHitTestVisible="False" Margin="4,0,0,0" FontSize="14"
+                               VerticalAlignment="Center" Foreground="{DynamicResource Rs.TextSecondary}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding Name}" Value=""/>
+                                            <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=GroupNameBox}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
                 <ItemsControl ItemsSource="{Binding Tiles}" ItemContainerStyle="{StaticResource TileContainer}"
                               Width="{Binding PixelWidth}" Height="{Binding PixelHeight}" HorizontalAlignment="Left"
                               Background="Transparent" Tag="{Binding}">

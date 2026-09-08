@@ -321,6 +321,9 @@ public partial class StartMenuWindow : Window
     {
         switch (e.Key)
         {
+            // while a group name is being edited, Esc belongs to that box (revert), not to the menu
+            case Key.Escape when Keyboard.FocusedElement is TextBox tb && tb != SearchBox:
+                break;
             case Key.Escape:
                 if (JumpGrid.Visibility == Visibility.Visible) JumpGrid.Visibility = Visibility.Collapsed;
                 else if (RailFlyout.Visibility == Visibility.Visible) RailFlyout.Visibility = Visibility.Collapsed;
@@ -530,7 +533,14 @@ public partial class StartMenuWindow : Window
         }
 
         var source = tile.Group;
-        if (target == null || host == null) { source.Pack(); return; }
+        if (target == null || host == null)
+        {
+            // Windows 10 behaviour: dropping a tile below every group starts a NEW group.
+            // Dropping anywhere else that isn't a group just snaps the tile back.
+            if (centre.Y > BottomOfLastGroup()) StartNewGroupWith(tile, source);
+            else source.Pack();
+            return;
+        }
 
         var local = TranslatePoint(topLeft, host);
         if (target != source)
@@ -543,6 +553,36 @@ public partial class StartMenuWindow : Window
         tile.Row = Math.Max(0, (int)Math.Round(local.Y / TileVm.Pitch));
         target.Pack(tile);
         if (target != source) source.Pack();
+        RemoveEmptyGroups();
+        SaveTiles();
+    }
+
+    /// <summary>Y (window coords) of the bottom of the last group's tile canvas.</summary>
+    private double BottomOfLastGroup()
+    {
+        double bottom = 0;
+        foreach (var g in _groups)
+        {
+            if (TileGroupsControl.ItemContainerGenerator.ContainerFromItem(g) is not ContentPresenter cp) continue;
+            if (FindChild<ItemsControl>(cp) is not { } ic) continue;
+            double y = ic.TranslatePoint(new Point(0, ic.ActualHeight), this).Y;
+            if (y > bottom) bottom = y;
+        }
+        return bottom;
+    }
+
+    /// <summary>Move a tile into a brand-new, unnamed group at the end of the board.</summary>
+    private void StartNewGroupWith(TileVm tile, TileGroupVm source)
+    {
+        var group = new TileGroupVm(string.Empty, App.Settings.TileColumns);
+        _groups.Add(group);
+        source.Tiles.Remove(tile);
+        tile.Group = group;
+        tile.Col = 0;
+        tile.Row = 0;
+        group.Tiles.Add(tile);
+        group.Pack();
+        source.Pack();
         RemoveEmptyGroups();
         SaveTiles();
     }
@@ -575,7 +615,10 @@ public partial class StartMenuWindow : Window
     }
     private void GroupName_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key is Key.Enter or Key.Escape) { AppList.Focus(); e.Handled = true; }
+        if (sender is not TextBox tb) return;
+        var binding = tb.GetBindingExpression(TextBox.TextProperty);
+        if (e.Key == Key.Enter) { binding?.UpdateSource(); SaveTiles(); AppList.Focus(); e.Handled = true; }
+        else if (e.Key == Key.Escape) { binding?.UpdateTarget(); AppList.Focus(); e.Handled = true; }
     }
 
     // ───────────────────────── left rail ─────────────────────────

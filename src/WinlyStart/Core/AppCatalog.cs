@@ -54,8 +54,10 @@ public sealed class AppEntry : INotifyPropertyChanged
     internal void SetIcon(int size, BitmapSource bmp)
     {
         _images[size] = bmp;
+        // "Item[]" refreshes indexer bindings (tiles); Icon is a plain property and needs its own
+        // notification or the app list stays blank forever after the async load.
         Raise("Item[]");
-        if (size == ListIcon) Raise(nameof(Icon));
+        Raise(nameof(Icon));
     }
 
     /// <summary>Drop cached bitmaps (DPI change / memory trim); they reload on next bind.</summary>

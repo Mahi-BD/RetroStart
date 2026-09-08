@@ -67,9 +67,9 @@ public sealed class TileGroupVm : INotifyPropertyChanged
     private string _name;
     private int _rows;
 
-    public TileGroupVm(string name, int columns) { _name = name; _columns = columns; }
+    public TileGroupVm(string? name, int columns) { _name = name ?? string.Empty; _columns = columns; }
 
-    public string Name { get => _name; set { _name = value; Raise(nameof(Name)); } }
+    public string Name { get => _name; set { _name = value ?? string.Empty; Raise(nameof(Name)); } }
     private int _columns;
     public int Columns { get => _columns; set { _columns = value; Raise(nameof(PixelWidth)); } }
     public ObservableCollection<TileVm> Tiles { get; } = new();
@@ -119,11 +119,24 @@ public sealed class TileGroupVm : INotifyPropertyChanged
         }
         foreach (var t in order) Place(t, keep: true);
 
-        _rows = grid.Count;
+        // Windows 10 never leaves a whole empty row inside a group, so close any gaps. Only rows that
+        // no tile occupies are removed, which keeps every multi-row tile contiguous.
+        int kept = 0;
+        var newRow = new int[grid.Count];
+        for (int r = 0; r < grid.Count; r++)
+        {
+            newRow[r] = kept;
+            if (Array.IndexOf(grid[r], true) >= 0) kept++;
+        }
+        if (kept != grid.Count)
+            foreach (var t in Tiles)
+                if (t.Row >= 0 && t.Row < newRow.Length) t.Row = newRow[t.Row];
+
+        _rows = kept;
         Raise(nameof(PixelHeight));
     }
 
-    public TileGroup ToModel() => new() { Name = _name, Tiles = Tiles.Select(t => t.ToModel()).ToList() };
+    public TileGroup ToModel() => new() { Name = _name ?? string.Empty, Tiles = Tiles.Select(t => t.ToModel()).ToList() };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));

@@ -161,6 +161,21 @@ Fixes made during that testing (all in v0.1):
   must bail when the menu is already closing (else launching an app re-opened the menu).
 - Opt-in trace to `%LocalAppData%\WinlyStart\debug.log` via env `WINLYSTART_DEBUG=1`.
 
+Second round of live fixes (also verified on the box):
+- **App-list icons were blank.** `Icon` reads size 32 but `SetIcon` only raised `Icon` for size 24, so
+  the async load never refreshed the binding. It now always raises `Icon`.
+- **Default icon.** Both the list and the tiles fall back to the Segoe MDL2 `AppIconDefault` glyph
+  (`&#xECAA;`) whenever the shell returns no icon — driven by a `DataTrigger` on the source being null,
+  so it also covers the moment before an icon loads.
+- **Auto-hiding scrollbars.** The thin bar is hidden and fades in while the pointer is anywhere in the
+  scrolling area. This needs the ScrollViewer to be *templated* (`AutoHideScroll`): a
+  `RelativeSource FindAncestor` binding from inside the ScrollViewer's own template resolves before the
+  bar is attached to the tree and the trigger never fires — that approach was tried and does not work.
+- **Groups, Windows 10 style.** Dropping a tile below the last group creates a new group; an unnamed
+  group shows a "Name group" hint; click the header to name/rename (Enter commits, Esc reverts) and it
+  persists to `tiles.json`. `Pack()` now also closes whole empty rows, so the board no longer shows the
+  large blank bands that stored high row indices used to leave.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.
