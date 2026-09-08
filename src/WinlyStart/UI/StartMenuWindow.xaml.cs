@@ -839,6 +839,26 @@ public partial class StartMenuWindow : Window
         RebuildRows();
     }
 
+    private void TileEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (Ctx<TileVm>(sender) is { } t) EditCustom(t.App);
+    }
+
+    private void RowEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (Ctx<AppRow>(sender) is { } r) EditCustom(r.App);
+    }
+
+    /// <summary>Rename / retarget a user-added website, program or file.</summary>
+    private void EditCustom(AppEntry app)
+    {
+        if (!app.IsCustom) return;
+        HideMenu();
+        var w = new InputWindow(app.Name, app.CustomTarget);
+        if (w.ShowDialog() != true) return;
+        App.Catalog.UpdateCustom(app.Id, w.ResultName, w.ResultValue);
+    }
+
     private void MenuSettings_Click(object sender, RoutedEventArgs e)
     {
         HideMenu();
@@ -876,6 +896,7 @@ public partial class StartMenuWindow : Window
         Add(r.Settings, "", "Settings", () => Open(Launcher.OpenSettings));
         Add(r.Calendar, "", "Calendar", ShowCalendar);
         RailList.ItemsSource = items;
+        RailFlyoutList.ItemsSource = items;   // the hamburger view shows exactly the same entries
     }
 
     private void RailItem_Click(object sender, RoutedEventArgs e)

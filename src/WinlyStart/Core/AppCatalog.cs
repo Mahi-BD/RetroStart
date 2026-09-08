@@ -22,6 +22,8 @@ public sealed class AppEntry : INotifyPropertyChanged
     public string? CustomTarget { get; init; }
     /// <summary>Cached preview image for a website tile's live face, if one has been fetched.</summary>
     public string? ThumbPath { get; set; }
+    /// <summary>A user-added item (website / program / file) — these can be edited and removed.</summary>
+    public bool IsCustom => CustomTarget is { Length: > 0 };
     public bool IsWebsite => CustomTarget is { } t &&
         (t.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || t.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
     public DateTime Created { get; init; }
@@ -172,6 +174,23 @@ public sealed class AppCatalog
             Store.Save("custom.json", Custom, JsonCtx.Default.CustomItems);
             Application.Current?.Dispatcher.BeginInvoke(ScanAsync);
         });
+    }
+
+    /// <summary>Renames/retargets a user-added item. Cached web assets are dropped when the target changes.</summary>
+    public void UpdateCustom(string id, string name, string target)
+    {
+        var item = Custom.Items.FirstOrDefault(c => c.Id == id);
+        if (item == null) return;
+        if (!string.Equals(item.Target, target, StringComparison.OrdinalIgnoreCase))
+        {
+            item.IconPath = string.Empty;
+            item.ThumbPath = string.Empty;
+        }
+        item.Name = name;
+        item.Target = target;
+        Store.Save("custom.json", Custom, JsonCtx.Default.CustomItems);
+        ScanAsync();
+        RefreshWebAssetsAsync();
     }
 
     public void RemoveCustom(string id)

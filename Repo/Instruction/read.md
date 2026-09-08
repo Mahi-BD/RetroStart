@@ -268,6 +268,19 @@ Seventh round — v1.4.0 (verified live):
 - **Calendar month moved into the title bar** ("Calendar — September 2026"), freeing the header row.
 - Version is **1.4.0** (csproj + manifest).
 
+Eighth round (verified live):
+- **The expanded rail matches the icon rail.** The hamburger view had its own hard-coded Documents /
+  Pictures / Settings rows, so it disagreed with the configurable icon rail. Both now bind to the same
+  `RailItemVm` list built by `BuildRail()` (`RailList` for the icons, `RailFlyoutList` for the labelled
+  rows), with the user row above and Power below.
+- **Hairline outline.** A 1 px `Rs.Divider` border (`Outline`, inside `Root` so it fades with the menu)
+  separates the menu from the taskbar and the desktop.
+- **User-added items are editable.** Tiles and app-list rows for custom items show **Edit…**
+  (`AppEntry.IsCustom`), which reopens `InputWindow` pre-filled. That window now doubles as the editor:
+  it detects a URL vs a path, shows a **Browse…** button and validates existence for files, and
+  validates the scheme for websites. `AppCatalog.UpdateCustom` saves and clears the cached favicon and
+  preview when the target changes, so a new site re-fetches its own assets.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

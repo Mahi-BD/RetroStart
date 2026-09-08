@@ -42,6 +42,8 @@
                             <MenuItem Header="Run as administrator" Click="RunAsAdmin_Click"/>
                             <MenuItem Header="Open file location" Click="OpenLocation_Click"/>
                         </MenuItem>
+                        <MenuItem Header="Edit…" Click="RowEdit_Click"
+                                  Visibility="{Binding App.IsCustom, Converter={StaticResource BoolToVis}}"/>
                         <MenuItem Header="Uninstall" Click="Uninstall_Click"/>
                     </ContextMenu>
                 </Border.ContextMenu>
@@ -116,6 +118,8 @@
                         </MenuItem>
                         <MenuItem Header="{Binding LiveMenuText}" Click="LiveToggle_Click"
                                   Visibility="{Binding CanBeLive, Converter={StaticResource BoolToVis}}"/>
+                        <MenuItem Header="Edit…" Click="TileEdit_Click"
+                                  Visibility="{Binding App.IsCustom, Converter={StaticResource BoolToVis}}"/>
                         <MenuItem Header="Uninstall" Click="TileUninstall_Click"/>
                     </ContextMenu>
                 </Border.ContextMenu>
@@ -386,7 +390,7 @@
                    VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="12,0,12,0" Visibility="Collapsed"
                    IsHitTestVisible="False" Panel.ZIndex="80"/>
 
-        <!-- ───────── expanded rail (hamburger) ───────── -->
+        <!-- ───────── expanded rail (hamburger): same items as the icon rail, with labels ───────── -->
         <Border x:Name="RailFlyout" Grid.ColumnSpan="2" Width="248" HorizontalAlignment="Left" Visibility="Collapsed"
                 Background="{DynamicResource Rs.Flyout}">
             <DockPanel>
@@ -403,24 +407,19 @@
                             <TextBlock x:Name="UserNameText" Text="User" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource FlyoutItem}" Click="Documents_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE8A5;" FontFamily="{StaticResource Rs.Glyphs}" FontSize="16" Width="48" TextAlignment="Center"/>
-                            <TextBlock Text="Documents" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource FlyoutItem}" Click="Pictures_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xEB9F;" FontFamily="{StaticResource Rs.Glyphs}" FontSize="16" Width="48" TextAlignment="Center"/>
-                            <TextBlock Text="Pictures" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource FlyoutItem}" Click="Settings_Click">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE713;" FontFamily="{StaticResource Rs.Glyphs}" FontSize="16" Width="48" TextAlignment="Center"/>
-                            <TextBlock Text="Settings" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <ItemsControl x:Name="RailFlyoutList" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource FlyoutItem}" Click="RailItem_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Glyph}" FontFamily="{StaticResource Rs.Glyphs}" FontSize="16"
+                                                   Width="48" TextAlignment="Center"/>
+                                        <TextBlock Text="{Binding Tooltip}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <Button Style="{StaticResource FlyoutItem}" Click="Power_Click">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE7E8;" FontFamily="{StaticResource Rs.Glyphs}" FontSize="16" Width="48" TextAlignment="Center"/>
@@ -432,26 +431,9 @@
             </DockPanel>
         </Border>
 
-        <!-- ───────── resize grips (Windows 10: menu is bottom-left anchored, grows up/right) ───────── -->
-        <Thumb x:Name="TopGrip" Grid.ColumnSpan="3" Height="6" VerticalAlignment="Top" HorizontalAlignment="Stretch"
-               Cursor="SizeNS" Panel.ZIndex="90" Opacity="0" Background="Transparent"
-               DragStarted="Grip_DragStarted" DragDelta="TopGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
-        <Thumb x:Name="RightGrip" Grid.ColumnSpan="3" Width="6" HorizontalAlignment="Right" VerticalAlignment="Stretch"
-               Cursor="SizeWE" Panel.ZIndex="90" Opacity="0" Background="Transparent"
-               DragStarted="Grip_DragStarted" DragDelta="RightGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
-        <Thumb x:Name="CornerGrip" Grid.ColumnSpan="3" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top"
-               Cursor="SizeNESW" Panel.ZIndex="91" ToolTip="Drag to resize"
-               DragStarted="Grip_DragStarted" DragDelta="CornerGrip_DragDelta" DragCompleted="Grip_DragCompleted">
-            <Thumb.Template>
-                <ControlTemplate TargetType="Thumb">
-                    <Grid Background="Transparent">
-                        <!-- subtle Windows-10-style gripper marks in the corner -->
-                        <Path Stroke="{DynamicResource Rs.TextSecondary}" StrokeThickness="1" SnapsToDevicePixels="True"
-                              Data="M17,3 L3,17  M17,8 L8,17  M17,13 L13,17" Opacity="0.9"/>
-                    </Grid>
-                </ControlTemplate>
-            </Thumb.Template>
-        </Thumb>
+        <!-- hairline outline: separates the menu from the taskbar and the desktop -->
+        <Border x:Name="Outline" Grid.ColumnSpan="3" BorderBrush="{DynamicResource Rs.Divider}" BorderThickness="1"
+                IsHitTestVisible="False" Panel.ZIndex="95"/>
 
         <!-- ───────── flyouts ───────── -->
         <Popup x:Name="PowerFlyout" PlacementTarget="{Binding ElementName=PowerButton}" Placement="Right" VerticalOffset="-96"
