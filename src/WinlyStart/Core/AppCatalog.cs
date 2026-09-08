@@ -18,6 +18,8 @@ public sealed class AppEntry : INotifyPropertyChanged
     /// <summary>Start-menu sub-folder (first level only, as Windows 10 does), null for root items.</summary>
     public string? Folder { get; init; }
     public bool IsPackaged { get; init; }
+    /// <summary>Set for user-added items (an .exe, a file, or a URL); launched with the shell.</summary>
+    public string? CustomTarget { get; init; }
     public DateTime Created { get; init; }
     public int Launches { get; set; }
 
@@ -80,6 +82,8 @@ public sealed class AppCatalog
 {
     public IReadOnlyList<AppEntry> Apps { get; private set; } = Array.Empty<AppEntry>();
     public UsageData Usage { get; }
+    /// <summary>Items the user added by hand (Add program / file / website).</summary>
+    public CustomItems Custom { get; }
     public event Action? Changed;
 
     private readonly List<FileSystemWatcher> _watchers = new();
@@ -89,6 +93,7 @@ public sealed class AppCatalog
     public AppCatalog()
     {
         Usage = Store.Load("usage.json", JsonCtx.Default.UsageData);
+        Custom = Store.Load("custom.json", JsonCtx.Default.CustomItems);
         foreach (var root in Roots())
         {
             if (!Directory.Exists(root)) continue;
@@ -117,6 +122,29 @@ public sealed class AppCatalog
         app.Launches++;
         Usage.Launches[app.Id] = app.Launches;
         Store.Save("usage.json", Usage, JsonCtx.Default.UsageData);
+    }
+
+    /// <summary>Adds a user item (exe / file / website) and rescans so it appears everywhere.</summary>
+    public AppEntry AddCustom(string name, string target)
+    {
+        var item = new CustomItem { Id = "custom:" + Guid.NewGuid().ToString("N"), Name = name, Target = target };
+        Custom.Items.Add(item);
+        Store.Save("custom.json", Custom, JsonCtx.Default.CustomItems);
+        var entry = new AppEntry
+        {
+            Id = item.Id, Name = item.Name, ParsingName = item.Target,
+            CustomTarget = item.Target, Created = DateTime.Now,
+        };
+        Apps = Apps.Append(entry).OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        Changed?.Invoke();
+        return entry;
+    }
+
+    public void RemoveCustom(string id)
+    {
+        if (Custom.Items.RemoveAll(c => c.Id == id) == 0) return;
+        Store.Save("custom.json", Custom, JsonCtx.Default.CustomItems);
+        ScanAsync();
     }
 
     /// <summary>Installs/uninstalls fire many file events; coalesce them into one rescan.</summary>
@@ -162,6 +190,16 @@ public sealed class AppCatalog
                 Id = id, Name = name, ParsingName = "shell:AppsFolder\\" + aumid,
                 IsPackaged = true, Created = created,
                 Launches = Usage.Launches.GetValueOrDefault(id),
+            });
+        }
+
+        foreach (var c in Custom.Items)
+        {
+            if (string.IsNullOrWhiteSpace(c.Id) || string.IsNullOrWhiteSpace(c.Target)) continue;
+            result.Add(new AppEntry
+            {
+                Id = c.Id, Name = c.Name, ParsingName = c.Target, CustomTarget = c.Target,
+                Created = DateTime.MinValue, Launches = Usage.Launches.GetValueOrDefault(c.Id),
             });
         }
 

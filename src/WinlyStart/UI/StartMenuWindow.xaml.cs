@@ -62,6 +62,7 @@ public partial class StartMenuWindow : Window
         App.Catalog.Changed += OnCatalogChanged;
         Theme.Current.Changed += ApplyBackdrop;
         ApplyBackdrop();
+        BuildRail();
         ApplySettings();
     }
 
@@ -199,6 +200,7 @@ public partial class StartMenuWindow : Window
         Height = s.MenuHeight;
         Width = WidthForColumns(s.TileColumns);
         foreach (var g in _groups) { g.Columns = s.TileColumns; g.Pack(); }
+        BuildRail();
         RebuildRows();
     }
 
@@ -610,15 +612,179 @@ public partial class StartMenuWindow : Window
 
     private void GroupName_LostFocus(object sender, RoutedEventArgs e)
     {
-        (sender as TextBox)?.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        if (sender is not TextBox tb) return;
+        tb.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+        if (tb.DataContext is TileGroupVm g) g.IsEditing = false;
         SaveTiles();
+    }
+
+    // ── group header: click renames, drag moves the whole group ──
+
+    private TileGroupVm? _headerPress;
+    private Point _headerStart;
+    private bool _headerDragging;
+
+    private void GroupHeader_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: TileGroupVm g } fe) return;
+        _headerPress = g;
+        _headerDragging = false;
+        _headerStart = e.GetPosition(this);
+        fe.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void GroupHeader_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (_headerPress == null || e.LeftButton != MouseButtonState.Pressed) return;
+        var d = e.GetPosition(this) - _headerStart;
+        if (!_headerDragging && (Math.Abs(d.X) > 6 || Math.Abs(d.Y) > 6)) _headerDragging = true;
+    }
+
+    private void GroupHeader_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement fe || _headerPress is not { } group) return;
+        fe.ReleaseMouseCapture();
+        var dropped = e.GetPosition(this);
+        _headerPress = null;
+        e.Handled = true;
+
+        if (!_headerDragging)
+        {
+            // plain click → rename, and put the caret in the box that just appeared
+            group.IsEditing = true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, new Action(() =>
+            {
+                if (FindSibling<TextBox>(fe) is not { } box) return;
+                box.Focus();
+                box.SelectAll();
+            }));
+            return;
+        }
+
+        _headerDragging = false;
+        MoveGroupTo(group, dropped.Y);
+    }
+
+    /// <summary>Reorder a dragged group to wherever it was dropped vertically.</summary>
+    private void MoveGroupTo(TileGroupVm group, double y)
+    {
+        int target = _groups.Count - 1;
+        for (int i = 0; i < _groups.Count; i++)
+        {
+            if (TileGroupsControl.ItemContainerGenerator.ContainerFromItem(_groups[i]) is not ContentPresenter cp) continue;
+            var top = cp.TranslatePoint(new Point(0, 0), this).Y;
+            if (y < top + cp.ActualHeight / 2) { target = i; break; }
+        }
+        int from = _groups.IndexOf(group);
+        if (from < 0 || from == target) return;
+        _groups.Move(from, Math.Clamp(target, 0, _groups.Count - 1));
+        SaveTiles();
+    }
+
+    private static T? FindSibling<T>(FrameworkElement from) where T : DependencyObject
+    {
+        if (VisualTreeHelper.GetParent(from) is not { } parent) return null;
+        int n = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < n; i++)
+            if (VisualTreeHelper.GetChild(parent, i) is T t) return t;
+        return null;
     }
     private void GroupName_KeyDown(object sender, KeyEventArgs e)
     {
         if (sender is not TextBox tb) return;
         var binding = tb.GetBindingExpression(TextBox.TextProperty);
-        if (e.Key == Key.Enter) { binding?.UpdateSource(); SaveTiles(); AppList.Focus(); e.Handled = true; }
-        else if (e.Key == Key.Escape) { binding?.UpdateTarget(); AppList.Focus(); e.Handled = true; }
+        if (e.Key == Key.Enter) { binding?.UpdateSource(); SaveTiles(); }
+        else if (e.Key == Key.Escape) binding?.UpdateTarget();
+        else return;
+        if (tb.DataContext is TileGroupVm g) g.IsEditing = false;
+        AppList.Focus();
+        e.Handled = true;
+    }
+
+    // ───────────────────────── board context menu ─────────────────────────
+
+    private void AddFile_Click(object sender, RoutedEventArgs e)
+    {
+        HideMenu();
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Add a program or file to Start",
+            Filter = "Programs and shortcuts|*.exe;*.lnk;*.url;*.bat;*.cmd;*.msc|All files|*.*",
+            CheckFileExists = true,
+        };
+        if (dlg.ShowDialog() != true) return;
+        AddCustomTile(Path.GetFileNameWithoutExtension(dlg.FileName), dlg.FileName);
+    }
+
+    private void AddWebsite_Click(object sender, RoutedEventArgs e)
+    {
+        HideMenu();
+        var w = new InputWindow();
+        if (w.ShowDialog() != true) return;
+        AddCustomTile(w.ResultName, w.ResultValue);
+    }
+
+    /// <summary>Registers a user-added target and pins a tile for it.</summary>
+    private void AddCustomTile(string name, string target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return;
+        var entry = App.Catalog.AddCustom(string.IsNullOrWhiteSpace(name) ? target : name, target);
+        AddTile(entry);
+        RebuildRows();
+    }
+
+    private void MenuSettings_Click(object sender, RoutedEventArgs e)
+    {
+        HideMenu();
+        ((App)Application.Current).ShowSettings();
+    }
+
+    private void MenuAbout_Click(object sender, RoutedEventArgs e)
+    {
+        HideMenu();
+        new AboutWindow().Show();
+    }
+
+    // ───────────────────────── left rail (configurable) ─────────────────────────
+
+    private CalendarWindow? _calendar;
+
+    /// <summary>Rebuilds the rail's middle section from Settings.Rail.</summary>
+    private void BuildRail()
+    {
+        var r = App.Settings.Rail;
+        var items = new List<RailItemVm>();
+        void Add(bool on, string glyph, string tip, Action act)
+        {
+            if (on) items.Add(new RailItemVm { Glyph = glyph, Tooltip = tip, Invoke = act });
+        }
+        void Open(Action a) { HideMenu(); a(); }
+
+        Add(r.Documents, "", "Documents", () => Open(Launcher.OpenDocuments));
+        Add(r.Downloads, "", "Downloads", () => Open(Launcher.OpenDownloads));
+        Add(r.Music, "", "Music", () => Open(Launcher.OpenMusic));
+        Add(r.Pictures, "", "Pictures", () => Open(Launcher.OpenPictures));
+        Add(r.Videos, "", "Videos", () => Open(Launcher.OpenVideos));
+        Add(r.Network, "", "Network", () => Open(Launcher.OpenNetwork));
+        Add(r.PersonalFolder, "", "Personal folder", () => Open(Launcher.OpenPersonalFolder));
+        Add(r.FileExplorer, "", "File Explorer", () => Open(Launcher.OpenFileExplorer));
+        Add(r.Settings, "", "Settings", () => Open(Launcher.OpenSettings));
+        Add(r.Calendar, "", "Calendar", ShowCalendar);
+        RailList.ItemsSource = items;
+    }
+
+    private void RailItem_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is RailItemVm item) item.Invoke();
+    }
+
+    private void ShowCalendar()
+    {
+        HideMenu();
+        if (_calendar is { IsLoaded: true }) { _calendar.Activate(); return; }
+        _calendar = new CalendarWindow();
+        _calendar.Show();
     }
 
     // ───────────────────────── left rail ─────────────────────────

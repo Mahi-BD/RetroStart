@@ -19,6 +19,18 @@ public partial class SettingsWindow : Window
         Recent.IsChecked = s.ShowRecentlyAdded;
         MostUsed.IsChecked = s.ShowMostUsed;
         Trim.IsChecked = s.TrimMemoryWhenHidden;
+
+        var r = s.Rail;
+        RailDocuments.IsChecked = r.Documents;
+        RailDownloads.IsChecked = r.Downloads;
+        RailMusic.IsChecked = r.Music;
+        RailPictures.IsChecked = r.Pictures;
+        RailVideos.IsChecked = r.Videos;
+        RailNetwork.IsChecked = r.Network;
+        RailPersonal.IsChecked = r.PersonalFolder;
+        RailExplorer.IsChecked = r.FileExplorer;
+        RailSettings.IsChecked = r.Settings;
+        RailCalendar.IsChecked = r.Calendar;
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
@@ -34,6 +46,19 @@ public partial class SettingsWindow : Window
         s.ShowRecentlyAdded = Recent.IsChecked == true;
         s.ShowMostUsed = MostUsed.IsChecked == true;
         s.TrimMemoryWhenHidden = Trim.IsChecked == true;
+
+        var r = s.Rail;
+        r.Documents = RailDocuments.IsChecked == true;
+        r.Downloads = RailDownloads.IsChecked == true;
+        r.Music = RailMusic.IsChecked == true;
+        r.Pictures = RailPictures.IsChecked == true;
+        r.Videos = RailVideos.IsChecked == true;
+        r.Network = RailNetwork.IsChecked == true;
+        r.PersonalFolder = RailPersonal.IsChecked == true;
+        r.FileExplorer = RailExplorer.IsChecked == true;
+        r.Settings = RailSettings.IsChecked == true;
+        r.Calendar = RailCalendar.IsChecked == true;
+
         App.ApplySettings();
         Close();
     }

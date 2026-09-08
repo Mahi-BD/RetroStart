@@ -38,6 +38,10 @@ the app and Windows 11 is exactly as it was.
 | Acrylic blur, accent colour on Start, transparency on/off — follows Windows 11 settings | ✅ live |
 | Live tiles | ❌ the platform API no longer exists on Windows 11 |
 
+Beyond Windows 10: right-click empty board space to **add any program, file, shortcut or website** as a
+tile, drag group headers to **reorder groups**, drag the corner grip to **resize** the menu, and turn on
+a **Calendar** button (plus Documents/Downloads/Music/Videos/Network/… ) for the left rail in Settings.
+
 ## Install
 
 1. Download the latest zip from **Releases** (`WinlyStart-win-x64.zip` needs the

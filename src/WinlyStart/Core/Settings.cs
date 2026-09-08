@@ -24,6 +24,37 @@ public sealed class Settings
     /// <summary>Align the menu under the Windows 11 Start button instead of the screen corner.</summary>
     public bool OpenAtStartButton { get; set; }
     public bool TrimMemoryWhenHidden { get; set; } = true;
+    /// <summary>Which shortcuts show in the left rail.</summary>
+    public RailSettings Rail { get; set; } = new();
+}
+
+/// <summary>Windows 10's "Choose which folders appear on Start", plus a calendar button.</summary>
+public sealed class RailSettings
+{
+    public bool Documents { get; set; } = true;
+    public bool Downloads { get; set; }
+    public bool Music { get; set; }
+    public bool Pictures { get; set; } = true;
+    public bool Videos { get; set; }
+    public bool Network { get; set; }
+    public bool PersonalFolder { get; set; }
+    public bool FileExplorer { get; set; }
+    public bool Settings { get; set; } = true;
+    /// <summary>Shows a calendar button in the rail that opens a calendar window.</summary>
+    public bool Calendar { get; set; }
+}
+
+/// <summary>A user-added target: an .exe, a shortcut, any file, or a website.</summary>
+public sealed class CustomItem
+{
+    public string Id { get; set; } = string.Empty;      // "custom:&lt;guid&gt;"
+    public string Name { get; set; } = string.Empty;
+    public string Target { get; set; } = string.Empty;  // full path or URL
+}
+
+public sealed class CustomItems
+{
+    public List<CustomItem> Items { get; set; } = new();
 }
 
 public sealed class Tile
@@ -57,6 +88,7 @@ public sealed class UsageData
 [JsonSerializable(typeof(Settings))]
 [JsonSerializable(typeof(TileLayout))]
 [JsonSerializable(typeof(UsageData))]
+[JsonSerializable(typeof(CustomItems))]
 internal partial class JsonCtx : JsonSerializerContext { }
 
 /// <summary>Tiny JSON file store. Reflection-free (source generated) to keep the working set small.</summary>

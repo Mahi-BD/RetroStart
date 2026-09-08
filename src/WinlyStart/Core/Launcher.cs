@@ -16,6 +16,8 @@ public static class Launcher
     {
         try
         {
+            // user-added exe / file / website: let the shell decide how to open it
+            if (app.CustomTarget is { Length: > 0 } target) { Start(target); return; }
             if (app.IsPackaged)
             {
                 string aumid = app.Id["uwp:".Length..];
@@ -42,7 +44,9 @@ public static class Launcher
     public static void OpenFileLocation(AppEntry app)
     {
         if (app.IsPackaged) return;
-        Start("explorer.exe", "/select,\"" + app.Id + "\"");
+        string path = app.CustomTarget ?? app.Id;
+        if (path.StartsWith("http", StringComparison.OrdinalIgnoreCase)) return;
+        Start("explorer.exe", "/select,\"" + path + "\"");
     }
 
     public static void Uninstall(AppEntry app) => Start("ms-settings:appsfeatures");
@@ -57,6 +61,11 @@ public static class Launcher
     public static void OpenDocuments() => Start("explorer.exe", "shell:Personal");
     public static void OpenPictures() => Start("explorer.exe", "shell:My Pictures");
     public static void OpenSettings() => Start("ms-settings:");
+    public static void OpenDownloads() => Start("explorer.exe", "shell:Downloads");
+    public static void OpenMusic() => Start("explorer.exe", "shell:My Music");
+    public static void OpenVideos() => Start("explorer.exe", "shell:My Video");
+    public static void OpenNetwork() => Start("explorer.exe", "shell:NetworkPlacesFolder");
+    public static void OpenPersonalFolder() => Start("explorer.exe", "shell:UsersFilesFolder");
     public static void OpenAccountSettings() => Start("ms-settings:yourinfo");
     public static void OpenFileExplorer() => Start("explorer.exe");
 

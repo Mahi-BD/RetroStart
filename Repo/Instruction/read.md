@@ -176,6 +176,22 @@ Second round of live fixes (also verified on the box):
   persists to `tiles.json`. `Pack()` now also closes whole empty rows, so the board no longer shows the
   large blank bands that stored high row indices used to leave.
 
+Third round (all verified live):
+- **No focus rectangle.** The black outline round the app list was WPF's default focus visual on the
+  focused `ListBox` — `FocusVisualStyle="{x:Null}"`.
+- **Group header is not an edit field until you click it.** It renders as plain text (with a
+  "Name group" hint when empty) and becomes a real bordered text box on click, like Windows 10
+  (`TileGroupVm.IsEditing`). Enter commits, Esc reverts.
+- **Groups move.** Drag a group header to reorder; a click (no drag) renames instead.
+- **Right-click on empty board space** → Add program or file… / Add website… / Settings… / About.
+  Added items are stored in `custom.json` as `custom:<guid>` entries, merged into the catalogue by
+  `AppCatalog.AddCustom`, launched via the shell (`AppEntry.CustomTarget`), so an .exe, a shortcut,
+  any file, or a URL all work and get a tile.
+- **Configurable left rail.** `Settings.Rail` drives the rail's middle section (Documents, Downloads,
+  Music, Pictures, Videos, Network, Personal folder, File Explorer, Settings, Calendar) — edited from
+  the Settings window, matching Windows 10's "Choose which folders appear on Start".
+- **Calendar.** Ticking Calendar adds a rail button that opens `CalendarWindow`.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

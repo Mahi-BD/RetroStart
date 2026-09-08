@@ -11,6 +11,7 @@
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ui:InverseBoolToVisibilityConverter x:Key="BoolToVisInverse"/>
         <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}"/>
         <Style TargetType="ScrollViewer" BasedOn="{StaticResource AutoHideScroll}"/>
         <Style TargetType="ContextMenu" BasedOn="{StaticResource Win10ContextMenu}"/>
@@ -162,31 +163,39 @@
 
         <DataTemplate DataType="{x:Type ui:TileGroupVm}">
             <StackPanel Margin="0,0,0,12">
-                <!-- Windows 10 group header: click to name/rename; shows a "Name group" hint while empty -->
+                <!-- Windows 10 group header. Normally plain text (not an edit field); click it to rename
+                     and it becomes a real text box. Drag it to move the whole group. -->
                 <Grid Height="36" Margin="0,0,0,4" HorizontalAlignment="Left" MinWidth="220">
+                    <Border Background="Transparent" Cursor="Hand" ToolTip="Click to rename · drag to move this group"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisInverse}}"
+                            MouseLeftButtonDown="GroupHeader_MouseDown" MouseMove="GroupHeader_MouseMove"
+                            MouseLeftButtonUp="GroupHeader_MouseUp">
+                        <Grid>
+                            <TextBlock Text="{Binding Name}" Margin="4,0,0,0" FontSize="14"
+                                       VerticalAlignment="Center" Foreground="{DynamicResource Rs.Text}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="Name group" Margin="4,0,0,0" FontSize="14" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Rs.TextSecondary}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Name}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
                     <TextBox x:Name="GroupNameBox" Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
-                             Padding="2,0" Background="Transparent" BorderThickness="0"
+                             Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}"
+                             Padding="6,0" Background="{DynamicResource Rs.Search}"
+                             BorderBrush="{DynamicResource Rs.Accent}" BorderThickness="2"
                              Foreground="{DynamicResource Rs.Text}" CaretBrush="{DynamicResource Rs.Text}"
                              FontSize="14" VerticalContentAlignment="Center" MaxLength="64"
-                             LostFocus="GroupName_LostFocus" KeyDown="GroupName_KeyDown"
-                             ToolTip="Click to name this group"/>
-                    <TextBlock Text="Name group" IsHitTestVisible="False" Margin="4,0,0,0" FontSize="14"
-                               VerticalAlignment="Center" Foreground="{DynamicResource Rs.TextSecondary}">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding Name}" Value=""/>
-                                            <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=GroupNameBox}" Value="False"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                             LostFocus="GroupName_LostFocus" KeyDown="GroupName_KeyDown"/>
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Tiles}" ItemContainerStyle="{StaticResource TileContainer}"
                               Width="{Binding PixelWidth}" Height="{Binding PixelHeight}" HorizontalAlignment="Left"
@@ -226,9 +235,14 @@
                             </Ellipse>
                         </Grid>
                     </Button>
-                    <Button Style="{StaticResource RailButton}" Content="&#xE8A5;" Click="Documents_Click" ToolTip="Documents"/>
-                    <Button Style="{StaticResource RailButton}" Content="&#xEB9F;" Click="Pictures_Click" ToolTip="Pictures"/>
-                    <Button Style="{StaticResource RailButton}" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings"/>
+                    <ItemsControl x:Name="RailList" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource RailButton}" Content="{Binding Glyph}"
+                                        ToolTip="{Binding Tooltip}" Click="RailItem_Click"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <Button x:Name="PowerButton" Style="{StaticResource RailButton}" Content="&#xE7E8;" Click="Power_Click" ToolTip="Power"/>
                 </StackPanel>
                 <Border/>
@@ -248,7 +262,8 @@
                          VerticalContentAlignment="Center" TextChanged="SearchBox_TextChanged"/>
             </Border>
             <ListBox x:Name="AppList" Grid.Row="1" Style="{StaticResource AppListBox}" Margin="0,8,0,0"
-                     SelectionMode="Single" KeyDown="AppList_KeyDown"/>
+                     SelectionMode="Single" KeyDown="AppList_KeyDown"
+                     FocusVisualStyle="{x:Null}" BorderThickness="0" Background="Transparent"/>
             <Border x:Name="JumpGrid" Grid.RowSpan="2" Visibility="Collapsed" Background="{DynamicResource Rs.Flyout}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <WrapPanel x:Name="JumpPanel" Margin="8,16" Width="240"/>
@@ -258,7 +273,17 @@
 
         <!-- ───────── tiles ───────── -->
         <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                      Margin="8,8,4,0" PanningMode="VerticalOnly" Focusable="False">
+                      Margin="8,8,4,0" PanningMode="VerticalOnly" Focusable="False" Background="Transparent">
+            <ScrollViewer.ContextMenu>
+                <!-- right-click on empty board space -->
+                <ContextMenu>
+                    <MenuItem Header="Add program or file…" Click="AddFile_Click"/>
+                    <MenuItem Header="Add website…" Click="AddWebsite_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Settings…" Click="MenuSettings_Click"/>
+                    <MenuItem Header="About Winly Start" Click="MenuAbout_Click"/>
+                </ContextMenu>
+            </ScrollViewer.ContextMenu>
             <ItemsControl x:Name="TileGroupsControl" Margin="4,0,0,0" Focusable="False"/>
         </ScrollViewer>
 

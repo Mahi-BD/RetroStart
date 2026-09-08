@@ -45,6 +45,22 @@
         <CheckBox x:Name="MostUsed" Content="Show “Most used”" Margin="0,3"/>
         <CheckBox x:Name="Trim" Content="Trim memory when the menu is hidden" Margin="0,3"/>
 
+        <TextBlock Text="Icons on the left rail" FontWeight="SemiBold" Margin="0,18,0,2"/>
+        <TextBlock Text="Choose which shortcuts appear beside the app list." Opacity="0.7" Margin="0,0,0,6"/>
+        <UniformGrid Columns="2">
+            <CheckBox x:Name="RailDocuments" Content="Documents" Margin="0,3"/>
+            <CheckBox x:Name="RailDownloads" Content="Downloads" Margin="0,3"/>
+            <CheckBox x:Name="RailMusic" Content="Music" Margin="0,3"/>
+            <CheckBox x:Name="RailPictures" Content="Pictures" Margin="0,3"/>
+            <CheckBox x:Name="RailVideos" Content="Videos" Margin="0,3"/>
+            <CheckBox x:Name="RailNetwork" Content="Network" Margin="0,3"/>
+            <CheckBox x:Name="RailPersonal" Content="Personal folder" Margin="0,3"/>
+            <CheckBox x:Name="RailExplorer" Content="File Explorer" Margin="0,3"/>
+            <CheckBox x:Name="RailSettings" Content="Settings" Margin="0,3"/>
+            <CheckBox x:Name="RailCalendar" Content="Calendar" Margin="0,3"
+                      ToolTip="Adds a calendar button to the rail that opens a calendar"/>
+        </UniformGrid>
+
         <TextBlock Margin="0,16,0,0" Opacity="0.7" TextWrapping="Wrap"
                    Text="Winly Start never modifies Windows. Quit it from the tray icon and the Windows 11 Start menu is back instantly."/>
 

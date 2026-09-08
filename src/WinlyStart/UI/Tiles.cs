@@ -70,6 +70,10 @@ public sealed class TileGroupVm : INotifyPropertyChanged
     public TileGroupVm(string? name, int columns) { _name = name ?? string.Empty; _columns = columns; }
 
     public string Name { get => _name; set { _name = value ?? string.Empty; Raise(nameof(Name)); } }
+
+    private bool _editing;
+    /// <summary>The header is plain text until the user clicks it, then it becomes a real text box.</summary>
+    public bool IsEditing { get => _editing; set { _editing = value; Raise(nameof(IsEditing)); } }
     private int _columns;
     public int Columns { get => _columns; set { _columns = value; Raise(nameof(PixelWidth)); } }
     public ObservableCollection<TileVm> Tiles { get; } = new();
