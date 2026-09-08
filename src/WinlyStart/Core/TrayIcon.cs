@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 internal static partial class Native
 {
@@ -25,7 +25,7 @@ public sealed class TrayIcon : IDisposable
 
     public TrayIcon(string tooltip)
     {
-        _source = new HwndSource(new HwndSourceParameters("RetroStart.Tray")
+        _source = new HwndSource(new HwndSourceParameters("WinlyStart.Tray")
         {
             Width = 0, Height = 0,
             WindowStyle = unchecked((int)0x80000000), // WS_POPUP, never shown

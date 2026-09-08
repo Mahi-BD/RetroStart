@@ -1,14 +1,14 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
 /// The "replacement" — three user-mode, fully revertible hooks:
-///  1. keyboard: a bare Windows-key tap (or Ctrl+Esc) toggles Retro Start instead of the Windows 11 menu,
-///  2. mouse: a left-click on the taskbar's Start button toggles Retro Start,
+///  1. keyboard: a bare Windows-key tap (or Ctrl+Esc) toggles Winly Start instead of the Windows 11 menu,
+///  2. mouse: a left-click on the taskbar's Start button toggles Winly Start,
 ///  3. foreground WinEvent: if the Windows 11 Start menu still appears (touch, elevated window focused),
-///     Retro Start takes over and the Windows menu light-dismisses.
+///     Winly Start takes over and the Windows menu light-dismisses.
 /// Nothing is injected anywhere; unhooking (or closing the app) restores Windows completely.
 /// </summary>
 public sealed class StartHook : IDisposable
@@ -156,9 +156,9 @@ public sealed class StartHook : IDisposable
         if (a != null) Application.Current?.Dispatcher.BeginInvoke(a);
     }
 
-    /// <summary>Opt-in trace to %LocalAppData%\RetroStart\debug.log (set env RETROSTART_DEBUG=1). Off by default.</summary>
+    /// <summary>Opt-in trace to %LocalAppData%\WinlyStart\debug.log (set env WINLYSTART_DEBUG=1). Off by default.</summary>
     internal static readonly bool DebugEnabled =
-        Environment.GetEnvironmentVariable("RETROSTART_DEBUG") is { Length: > 0 } v && v != "0";
+        Environment.GetEnvironmentVariable("WINLYSTART_DEBUG") is { Length: > 0 } v && v != "0";
 
     internal static void Debug(string msg)
     {

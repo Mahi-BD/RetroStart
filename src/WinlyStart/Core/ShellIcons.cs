@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
 /// One icon pipeline for desktop shortcuts and packaged apps:
@@ -60,7 +60,9 @@ public static class ShellIcons
         for (int i = 3; i < pixels.Length; i += 4) if (pixels[i] != 0) { anyAlpha = true; break; }
         if (!anyAlpha) for (int i = 3; i < pixels.Length; i += 4) pixels[i] = 255;
 
-        var bmp = BitmapSource.Create(w, h, 96, 96, PixelFormats.Pbgra32, null, pixels, w * 4);
+        // GetDIBits returns STRAIGHT (non-premultiplied) alpha, so the format must be Bgra32.
+        // Using Pbgra32 here made edge pixels blend wrong → the fringed/jagged icon borders.
+        var bmp = BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgra32, null, pixels, w * 4);
         bmp.Freeze();
         return bmp;
     }
@@ -78,7 +80,7 @@ public static class IconLoader
 
     static IconLoader()
     {
-        var t = new Thread(Worker) { IsBackground = true, Name = "RetroStart.Icons", Priority = ThreadPriority.BelowNormal };
+        var t = new Thread(Worker) { IsBackground = true, Name = "WinlyStart.Icons", Priority = ThreadPriority.BelowNormal };
         t.SetApartmentState(ApartmentState.STA);
         t.Start();
     }

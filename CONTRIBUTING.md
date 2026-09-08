@@ -1,4 +1,4 @@
-# Contributing to Retro Start
+# Contributing to Winly Start
 
 Thanks for helping bring the Windows 10 Start menu back!
 
@@ -11,7 +11,7 @@ Thanks for helping bring the Windows 10 Start menu back!
    a very good reason.
 3. **Theme follows Windows 11, style follows Windows 10.** Read colours from the OS; keep
    square corners, Segoe MDL2 glyphs, 4 px tile gutters.
-4. `dotnet build src/RetroStart -c Release` must produce **0 errors and 0 warnings**.
+4. `dotnet build src/WinlyStart -c Release` must produce **0 errors and 0 warnings**.
 
 ## Workflow
 
@@ -23,5 +23,5 @@ Thanks for helping bring the Windows 10 Start menu back!
 ## Reporting bugs
 
 Include: Windows version (`winver`), .NET runtime version, whether the taskbar is left- or
-centre-aligned, display scaling, and the contents of `%LocalAppData%\RetroStart\error.log`
+centre-aligned, display scaling, and the contents of `%LocalAppData%\WinlyStart\error.log`
 if it exists.

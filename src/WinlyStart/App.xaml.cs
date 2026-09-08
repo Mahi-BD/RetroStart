@@ -4,10 +4,10 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using Microsoft.Win32;
-using RetroStart.Core;
-using RetroStart.UI;
+using WinlyStart.Core;
+using WinlyStart.UI;
 
-namespace RetroStart;
+namespace WinlyStart;
 
 public partial class App : Application
 {
@@ -22,14 +22,14 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        _mutex = new Mutex(true, "RetroStart.SingleInstance", out bool first);
+        _mutex = new Mutex(true, "WinlyStart.SingleInstance", out bool first);
         if (!first) { Shutdown(); return; }
 
         DispatcherUnhandledException += (_, ex) => { Log(ex.Exception); ex.Handled = true; };
         AppDomain.CurrentDomain.UnhandledException += (_, ex) => Log(ex.ExceptionObject as Exception);
 
         Settings = Store.Load("settings.json", JsonCtx.Default.Settings);
-        if (Settings.TileColumns is not (6 or 8)) Settings.TileColumns = 6;
+        Settings.TileColumns = Math.Clamp(Settings.TileColumns == 0 ? 6 : Settings.TileColumns, 4, 12);
         Settings.MenuHeight = Math.Clamp(Settings.MenuHeight, 480, 1200);
 
         Theme.Current.Start(Settings.Theme);
@@ -44,7 +44,7 @@ public partial class App : Application
         _hook.Install();
         TaskbarInfo.RefreshStartButtonAsync();
 
-        _tray = new TrayIcon("Retro Start");
+        _tray = new TrayIcon("Winly Start");
         _tray.LeftClick += () => _menu.ToggleMenu();
         _tray.RightClick += ShowTrayMenu;
 
@@ -85,7 +85,7 @@ public partial class App : Application
         cm.Items.Add(Item("Settings…", ShowSettings));
         cm.Items.Add(Item("Refresh app list", () => Catalog.ScanAsync()));
         cm.Items.Add(new Separator { Style = (Style)Resources["Win10Separator"] });
-        cm.Items.Add(Item("Exit Retro Start", Shutdown));
+        cm.Items.Add(Item("Exit Winly Start", Shutdown));
         cm.IsOpen = true;
         // A popup with no owning window would not dismiss on an outside click; give it the foreground.
         if (PresentationSource.FromVisual(cm) is HwndSource src) Native.SetForegroundWindow(src.Handle);
@@ -118,7 +118,7 @@ public partial class App : Application
     }
 }
 
-/// <summary>Per-user autostart via HKCU\…\Run — the only registry key Retro Start ever writes.</summary>
+/// <summary>Per-user autostart via HKCU\…\Run — the only registry key Winly Start ever writes.</summary>
 internal static class Autostart
 {
     private const string Key = @"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -129,8 +129,8 @@ internal static class Autostart
         {
             using var k = Registry.CurrentUser.CreateSubKey(Key);
             if (k == null) return;
-            if (enabled && Environment.ProcessPath is { } exe) k.SetValue("RetroStart", $"\"{exe}\"");
-            else k.DeleteValue("RetroStart", throwOnMissingValue: false);
+            if (enabled && Environment.ProcessPath is { } exe) k.SetValue("WinlyStart", $"\"{exe}\"");
+            else k.DeleteValue("WinlyStart", throwOnMissingValue: false);
         }
         catch { }
     }

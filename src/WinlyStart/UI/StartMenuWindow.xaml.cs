@@ -8,9 +8,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using RetroStart.Core;
+using WinlyStart.Core;
 
-namespace RetroStart.UI;
+namespace WinlyStart.UI;
 
 public partial class StartMenuWindow : Window
 {
@@ -188,13 +188,69 @@ public partial class StartMenuWindow : Window
         return false;
     }
 
+    // Window width = rail(48) + list(256) + chrome(26) + tile area(cols*Pitch - Gap).
+    private const double ChromeWidth = 48 + 256 + 26 - TileVm.Gap;   // constant part; add cols*Pitch
+    private static double WidthForColumns(int cols) => ChromeWidth + cols * TileVm.Pitch;
+    private static int ColumnsForWidth(double width) => Math.Clamp((int)Math.Round((width - ChromeWidth) / TileVm.Pitch), 4, 12);
+
     public void ApplySettings()
     {
         var s = App.Settings;
         Height = s.MenuHeight;
-        Width = 48 + 256 + 26 + (s.TileColumns * TileVm.Pitch - TileVm.Gap);
+        Width = WidthForColumns(s.TileColumns);
         foreach (var g in _groups) { g.Columns = s.TileColumns; g.Pack(); }
         RebuildRows();
+    }
+
+    // ───────────────────────── resize grips ─────────────────────────
+    // The menu is anchored bottom-left and grows up/right. We resize from the *absolute* cursor
+    // position (not accumulated Thumb deltas): the grips sit on the moving edges, so a delta-based
+    // approach makes the grip chase the cursor and under-reports movement — which left width stuck.
+
+    private double _dragScale, _dragBottom, _dragLeft, _dragMaxH;
+
+    private void Grip_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
+    {
+        _dragScale = Native.GetDpiForWindow(_hwnd) / 96.0; if (_dragScale <= 0) _dragScale = 1;
+        _dragBottom = Top + Height;
+        _dragLeft = Left;
+        var mon = TaskbarInfo.MonitorInfo(Native.MonitorFromWindow(_hwnd, Native.MONITOR_DEFAULTTONEAREST));
+        _dragMaxH = mon.rcWork.Height / _dragScale;
+    }
+
+    private void RightGrip_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e) => ApplyResize(true, false);
+    private void TopGrip_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e) => ApplyResize(false, true);
+    private void CornerGrip_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e) => ApplyResize(true, true);
+
+    /// <summary>Live resize from the cursor: width snaps to whole tile columns (reflowing every group),
+    /// height is free. The bottom-left corner stays pinned above the taskbar.</summary>
+    private void ApplyResize(bool width, bool height)
+    {
+        Native.GetCursorPos(out var p);
+        double cursorX = p.X / _dragScale, cursorY = p.Y / _dragScale;   // physical px → DIPs
+        if (width)
+        {
+            int cols = ColumnsForWidth(cursorX - _dragLeft);
+            if (cols != App.Settings.TileColumns)
+            {
+                App.Settings.TileColumns = cols;
+                foreach (var g in _groups) { g.Columns = cols; g.Pack(); }
+            }
+            Width = WidthForColumns(cols);
+        }
+        if (height)
+        {
+            double h = Math.Clamp(_dragBottom - cursorY, 480, Math.Max(480, _dragMaxH));
+            Height = h;
+            Top = _dragBottom - h;                 // keep the bottom edge pinned above the taskbar
+        }
+    }
+
+    private void Grip_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+    {
+        App.Settings.MenuHeight = (int)Math.Round(Height);
+        Store.Save("settings.json", App.Settings, JsonCtx.Default.Settings);
+        StartHook.Debug($"resize → cols={App.Settings.TileColumns} h={App.Settings.MenuHeight}");
     }
 
     private void ApplyBackdrop()

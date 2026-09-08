@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media.Imaging;
-using RetroStart.Core;
+using WinlyStart.Core;
 
-namespace RetroStart.UI;
+namespace WinlyStart.UI;
 
 /// <summary>One tile on the board. Geometry is in 48 px units with 4 px gutters, like Windows 10.</summary>
 public sealed class TileVm : INotifyPropertyChanged
@@ -42,14 +42,18 @@ public sealed class TileVm : INotifyPropertyChanged
     public string Name => App.Name;
     public bool CanRunAsAdmin => !App.IsPackaged;
 
-    /// <summary>Icon centred on the accent plate, Windows 10 proportions. Packaged (Store) apps ship a
-    /// plated square logo, so it may sit a little larger than a desktop app's icon.</summary>
+    /// <summary>Displayed icon size (logical px): centred on the accent plate, Windows 10 proportions.
+    /// Packaged (Store) apps ship a plated square logo, so it sits a little larger than a desktop icon.</summary>
     public int ImageSize => App.IsPackaged
         ? _size switch { TileSize.Small => 32, TileSize.Large => 128, _ => 64 }
         : _size switch { TileSize.Small => 24, TileSize.Large => 96, _ => 48 };
     public double ImageWidth => ImageSize;
     public double ImageHeight => ImageSize;
-    public BitmapSource? Image => App[ImageSize];
+
+    /// <summary>Resolution actually requested from the shell — always a generous native icon size so
+    /// WPF downscales (which is crisp) instead of upscaling (which looks jagged).</summary>
+    private int SourceSize => _size switch { TileSize.Large => 256, TileSize.Small => 64, _ => 96 };
+    public BitmapSource? Image => App[SourceSize];
 
     public Tile ToModel() => new() { AppId = App.Id, Size = _size, Col = _col, Row = _row };
 

@@ -1,7 +1,7 @@
 using System.Windows;
-using RetroStart.Core;
+using WinlyStart.Core;
 
-namespace RetroStart.UI;
+namespace WinlyStart.UI;
 
 /// <summary>Rows of the virtualised A–Z app list. Each subclass has its own implicit DataTemplate.</summary>
 public abstract class ListRow

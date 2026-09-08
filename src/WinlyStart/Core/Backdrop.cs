@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
 /// Windows 10 style acrylic: DWM blurs whatever is behind the window and paints our tint on top.

@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
 /// Reads the Windows 11 personalisation settings (light/dark, accent colour, accent on Start,

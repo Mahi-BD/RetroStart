@@ -3,19 +3,20 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 public enum ThemeMode { Auto, Light, Dark }
 public enum TileSize { Small, Medium, Wide, Large }
 
-/// <summary>User options. Persisted to %LocalAppData%\RetroStart\settings.json.</summary>
+/// <summary>User options. Persisted to %LocalAppData%\WinlyStart\settings.json.</summary>
 public sealed class Settings
 {
     public bool ReplaceWinKey { get; set; } = true;
     public bool ReplaceStartButton { get; set; } = true;
     public bool StartWithWindows { get; set; }
     public ThemeMode Theme { get; set; } = ThemeMode.Auto;
-    /// <summary>Tile units per group row: 6 (three medium tiles) or 8 (four).</summary>
+    /// <summary>Tile units per group row (each medium tile is 2 units). 6 = three medium tiles wide.
+    /// Adjustable 4–12 by dragging the resize grip.</summary>
     public int TileColumns { get; set; } = 6;
     public int MenuHeight { get; set; } = 640;
     public bool ShowRecentlyAdded { get; set; } = true;
@@ -62,7 +63,7 @@ internal partial class JsonCtx : JsonSerializerContext { }
 public static class Store
 {
     public static readonly string Dir =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RetroStart");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinlyStart");
 
     public static T Load<T>(string file, JsonTypeInfo<T> type) where T : new()
     {

@@ -3,7 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>One installed application (desktop shortcut or packaged app).</summary>
 public sealed class AppEntry : INotifyPropertyChanged
@@ -36,8 +36,8 @@ public sealed class AppEntry : INotifyPropertyChanged
 
     private readonly Dictionary<int, BitmapSource> _images = new(3);
 
-    /// <summary>24 px icon for the app list.</summary>
-    public BitmapSource? Icon => this[ListIcon];
+    /// <summary>App-list icon. Requested at 32 px (a native shell size) and shown at 24 for a crisp downscale.</summary>
+    public BitmapSource? Icon => this[32];
 
     /// <summary>Icon at any logical size (24/48/96/100/204…). Null until the background loader
     /// delivers it, then <c>PropertyChanged("Item[]")</c> refreshes every binding.</summary>
@@ -135,7 +135,7 @@ public sealed class AppCatalog
                 Application.Current?.Dispatcher.BeginInvoke(() => { Apps = list; Changed?.Invoke(); });
             }
             finally { Interlocked.Exchange(ref _scanning, 0); }
-        }) { IsBackground = true, Name = "RetroStart.Scan" };
+        }) { IsBackground = true, Name = "WinlyStart.Scan" };
         t.SetApartmentState(ApartmentState.STA);
         t.Start();
     }

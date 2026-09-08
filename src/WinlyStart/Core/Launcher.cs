@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Principal;
 using System.Text;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
 /// Everything that leaves the process: launching apps, opening shell locations, and the

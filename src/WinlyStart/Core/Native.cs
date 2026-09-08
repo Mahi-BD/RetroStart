@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 /// <summary>
-/// Every P/Invoke and COM declaration used by Retro Start lives here so the rest of the
+/// Every P/Invoke and COM declaration used by Winly Start lives here so the rest of the
 /// code base stays readable. Nothing in this file touches system state by itself.
 /// </summary>
 internal static partial class Native

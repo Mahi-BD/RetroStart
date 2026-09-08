@@ -17,32 +17,32 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Build (0 warnings policy)
-        run: dotnet build src/RetroStart -c Release -warnaserror
+        run: dotnet build src/WinlyStart -c Release -warnaserror
 
       - name: Publish (framework-dependent)
-        run: dotnet publish src/RetroStart -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out/fdd
+        run: dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out/fdd
 
       - name: Publish (self-contained)
-        run: dotnet publish src/RetroStart -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out/sc
+        run: dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out/sc
 
       - name: Zip
         shell: pwsh
         run: |
-          Compress-Archive -Path out/fdd/* -DestinationPath RetroStart-win-x64.zip
-          Compress-Archive -Path out/sc/*  -DestinationPath RetroStart-win-x64-selfcontained.zip
+          Compress-Archive -Path out/fdd/* -DestinationPath WinlyStart-win-x64.zip
+          Compress-Archive -Path out/sc/*  -DestinationPath WinlyStart-win-x64-selfcontained.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RetroStart
+          name: WinlyStart
           path: |
-            RetroStart-win-x64.zip
-            RetroStart-win-x64-selfcontained.zip
+            WinlyStart-win-x64.zip
+            WinlyStart-win-x64-selfcontained.zip
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            RetroStart-win-x64.zip
-            RetroStart-win-x64-selfcontained.zip
+            WinlyStart-win-x64.zip
+            WinlyStart-win-x64-selfcontained.zip
           generate_release_notes: true

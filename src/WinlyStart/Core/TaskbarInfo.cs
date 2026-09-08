@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
 
-namespace RetroStart.Core;
+namespace WinlyStart.Core;
 
 internal static partial class Native
 {

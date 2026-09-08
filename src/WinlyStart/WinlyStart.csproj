@@ -7,13 +7,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>RetroStart</RootNamespace>
-    <AssemblyName>RetroStart</AssemblyName>
+    <RootNamespace>WinlyStart</RootNamespace>
+    <AssemblyName>WinlyStart</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets/RetroStart.ico</ApplicationIcon>
+    <ApplicationIcon>Assets/WinlyStart.ico</ApplicationIcon>
     <Version>0.1.0</Version>
-    <Authors>Retro Start contributors</Authors>
-    <Product>Retro Start</Product>
+    <Authors>Winly Start contributors</Authors>
+    <Product>Winly Start</Product>
     <Description>The Windows 10 Start menu, back on Windows 11.</Description>
     <Copyright>MIT License</Copyright>
     <!-- lets the project compile on Linux/macOS CI boxes; it only runs on Windows -->
@@ -33,7 +33,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Assets/RetroStart.ico" />
+    <Resource Include="Assets/WinlyStart.ico" />
   </ItemGroup>
 
 </Project>

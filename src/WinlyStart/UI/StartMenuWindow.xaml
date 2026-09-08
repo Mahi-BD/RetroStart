@@ -1,8 +1,8 @@
-<Window x:Class="RetroStart.UI.StartMenuWindow"
+<Window x:Class="WinlyStart.UI.StartMenuWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:ui="clr-namespace:RetroStart.UI"
-        Title="Retro Start" Width="648" Height="640"
+        xmlns:ui="clr-namespace:WinlyStart.UI"
+        Title="Winly Start" Width="648" Height="640"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
         ShowInTaskbar="False" Topmost="True" ShowActivated="True" WindowStartupLocation="Manual"
         UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display"
@@ -253,6 +253,27 @@
                 <Border/>
             </DockPanel>
         </Border>
+
+        <!-- ───────── resize grips (Windows 10: menu is bottom-left anchored, grows up/right) ───────── -->
+        <Thumb x:Name="TopGrip" Grid.ColumnSpan="3" Height="6" VerticalAlignment="Top" HorizontalAlignment="Stretch"
+               Cursor="SizeNS" Panel.ZIndex="90" Opacity="0" Background="Transparent"
+               DragStarted="Grip_DragStarted" DragDelta="TopGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
+        <Thumb x:Name="RightGrip" Grid.ColumnSpan="3" Width="6" HorizontalAlignment="Right" VerticalAlignment="Stretch"
+               Cursor="SizeWE" Panel.ZIndex="90" Opacity="0" Background="Transparent"
+               DragStarted="Grip_DragStarted" DragDelta="RightGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
+        <Thumb x:Name="CornerGrip" Grid.ColumnSpan="3" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top"
+               Cursor="SizeNESW" Panel.ZIndex="91" ToolTip="Drag to resize"
+               DragStarted="Grip_DragStarted" DragDelta="CornerGrip_DragDelta" DragCompleted="Grip_DragCompleted">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Grid Background="Transparent">
+                        <!-- subtle Windows-10-style gripper marks in the corner -->
+                        <Path Stroke="{DynamicResource Rs.TextSecondary}" StrokeThickness="1" SnapsToDevicePixels="True"
+                              Data="M17,3 L3,17  M17,8 L8,17  M17,13 L13,17" Opacity="0.9"/>
+                    </Grid>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
 
         <!-- ───────── flyouts ───────── -->
         <Popup x:Name="PowerFlyout" PlacementTarget="{Binding ElementName=PowerButton}" Placement="Right" VerticalOffset="-96"

@@ -1,7 +1,7 @@
 using System.Windows;
-using RetroStart.Core;
+using WinlyStart.Core;
 
-namespace RetroStart.UI;
+namespace WinlyStart.UI;
 
 public partial class SettingsWindow : Window
 {

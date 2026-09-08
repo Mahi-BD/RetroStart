@@ -1,16 +1,16 @@
-# Retro Start — project rules, plan & architecture
+# Winly Start — project rules, plan & architecture
 
-**Retro Start** brings the Windows 10 Start menu back to Windows 11. It is an open-source
+**Winly Start** brings the Windows 10 Start menu back to Windows 11. It is an open-source
 (MIT) .NET 8 WPF desktop app that *replaces* the Windows 11 Start menu experience
 (Start button click, Windows key, Ctrl+Esc) with a faithful Windows 10 style menu —
 left rail, A–Z app list, and a live-tile-style tile board — while following the
 Windows 11 theme (light/dark, accent colour, transparency) and using Windows 10 style
 visuals (acrylic blur, square corners, slide-up animation, tile hover/press effects).
 
-GitHub: https://github.com/Mahi-BD/RetroStart  ·  Local: `/home/mahi/Project/RetroStart`
+GitHub: https://github.com/Mahi-BD/WinlyStart  ·  Local: `/home/mahi/Project/WinlyStart`
 
 ## Build / run rules (house rules)
-1. After any change, **compile it yourself** (`dotnet build src/RetroStart -c Release`) and
+1. After any change, **compile it yourself** (`dotnet build src/WinlyStart -c Release`) and
    confirm **0 errors** before calling a task done. On Linux the project cross-compiles with
    `EnableWindowsTargeting=true` (use `~/.dotnet/dotnet` if `dotnet` is not on PATH);
    it can only *run* on Windows 10/11.
@@ -19,15 +19,15 @@ GitHub: https://github.com/Mahi-BD/RetroStart  ·  Local: `/home/mahi/Project/Re
    (source-generated). Every dependency must justify its working-set cost.
 3. **Never harm the OS.** No injection into `explorer.exe`, no DLL/registry patching of
    system components, no killing/suspending shell processes, no modifying HKLM.
-   Everything Retro Start does is user-mode, HKCU-only, revertible by closing the app.
-   The Windows 11 Start menu is *not* disabled — it is intercepted; quit Retro Start and
+   Everything Winly Start does is user-mode, HKCU-only, revertible by closing the app.
+   The Windows 11 Start menu is *not* disabled — it is intercepted; quit Winly Start and
    Windows is exactly as before.
 4. Runs as a **normal user** (`asInvoker`). Never require or auto-request elevation.
 5. **Theme follows Windows 11** (registry, live-updated) — never hard-code a colour that
    Windows exposes. Visual *style* follows Windows 10 (square corners, Segoe MDL2 glyphs,
    acrylic tint, 4 px tile gutters, accent-coloured tiles and list headers).
 6. Save instructions to `/Repo/Instruction`, scripts to `/Repo/Script`,
-   test/scratch files to `/Repo/Temp`. User data lives in `%LocalAppData%\RetroStart\`
+   test/scratch files to `/Repo/Temp`. User data lives in `%LocalAppData%\WinlyStart\`
    (`settings.json`, `tiles.json`, `usage.json`) — never inside the install folder.
 7. Keep `README.md` (user-facing) and this file (developer-facing) in sync when behaviour
    or layout changes.
@@ -41,10 +41,10 @@ GitHub: https://github.com/Mahi-BD/RetroStart  ·  Local: `/home/mahi/Project/Re
 ## How the "replacement" works (no OS harm)
 | Trigger | Mechanism | Notes |
 |---|---|---|
-| **Windows key** tap | `WH_KEYBOARD_LL` hook (`Core/StartHook.cs`). On Win-down we let the key through **and** inject a harmless unassigned virtual key (0xE8) so Windows sees a "combo" and never opens its own Start. On Win-up with no other key pressed → toggle Retro Start. | All Win+X combos keep working natively. Same trick AutoHotkey users have relied on for years. |
-| **Ctrl+Esc** | Same hook; swallowed and toggles Retro Start. | |
-| **Start button click** | `WH_MOUSE_LL` hook. If a left-click lands inside the Start button rectangle (found through UI Automation, `AutomationId = "StartButton"` inside `Shell_TrayWnd`, cached and refreshed periodically) it is swallowed and Retro Start toggles. | Right-click (Win+X menu) passes through. Works with left- and centre-aligned taskbars. |
-| **Anything we missed** (touch gesture, Win key while an elevated window is focused) | `SetWinEventHook(EVENT_SYSTEM_FOREGROUND)`. When the foreground window belongs to `StartMenuExperienceHost.exe`, Retro Start shows itself and takes focus; the Windows 11 menu light-dismisses. | Slight flicker in this rare path only. |
+| **Windows key** tap | `WH_KEYBOARD_LL` hook (`Core/StartHook.cs`). On Win-down we let the key through **and** inject a harmless unassigned virtual key (0xE8) so Windows sees a "combo" and never opens its own Start. On Win-up with no other key pressed → toggle Winly Start. | All Win+X combos keep working natively. Same trick AutoHotkey users have relied on for years. |
+| **Ctrl+Esc** | Same hook; swallowed and toggles Winly Start. | |
+| **Start button click** | `WH_MOUSE_LL` hook. If a left-click lands inside the Start button rectangle (found through UI Automation, `AutomationId = "StartButton"` inside `Shell_TrayWnd`, cached and refreshed periodically) it is swallowed and Winly Start toggles. | Right-click (Win+X menu) passes through. Works with left- and centre-aligned taskbars. |
+| **Anything we missed** (touch gesture, Win key while an elevated window is focused) | `SetWinEventHook(EVENT_SYSTEM_FOREGROUND)`. When the foreground window belongs to `StartMenuExperienceHost.exe`, Winly Start shows itself and takes focus; the Windows 11 menu light-dismisses. | Slight flicker in this rare path only. |
 
 Limitation: low-level hooks cannot see input while an **elevated** window is focused (UIPI).
 In that case the fallback row above kicks in. This is by design — we do not run elevated.
@@ -114,8 +114,8 @@ Settings allow forcing Light/Dark.
 
 ## Source layout
 ```
-src/RetroStart/
-  RetroStart.csproj, app.manifest (PerMonitorV2 DPI, asInvoker)
+src/WinlyStart/
+  WinlyStart.csproj, app.manifest (PerMonitorV2 DPI, asInvoker)
   App.xaml(.cs)          startup, single instance, tray icon, hook wiring
   Core/
     Native.cs            all P/Invoke + COM interop declarations
@@ -159,7 +159,7 @@ Fixes made during that testing (all in v0.1):
   own mutable transform on first interaction (`EnsureTransform`).
 - A short post-show "deactivation grace" re-asserts foreground when Windows churns focus on open, but
   must bail when the menu is already closing (else launching an app re-opened the menu).
-- Opt-in trace to `%LocalAppData%\RetroStart\debug.log` via env `RETROSTART_DEBUG=1`.
+- Opt-in trace to `%LocalAppData%\WinlyStart\debug.log` via env `WINLYSTART_DEBUG=1`.
 
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
