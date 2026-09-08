@@ -4,6 +4,7 @@
         Title="Calendar" Width="1000" Height="600" MinWidth="760" MinHeight="460"
         ResizeMode="CanResize" WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Background="{DynamicResource Dlg.Bg}" Foreground="{DynamicResource Dlg.Text}"
         SizeChanged="Window_SizeChanged" Closing="Window_Closing">
     <Window.Resources>
         <!-- flat day cell so Background / BorderBrush set from code show exactly as set -->
@@ -13,7 +14,8 @@
             <Setter Property="FontSize" Value="15"/>
             <Setter Property="Focusable" Value="False"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Background" Value="White"/>
+            <Setter Property="Background" Value="{DynamicResource Dlg.Card}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Dlg.Text}"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="Template">
@@ -23,7 +25,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
                             <Grid>
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Border x:Name="Hover" Background="#22000000" Visibility="Collapsed"/>
+                                <Border x:Name="Hover" Background="{DynamicResource Dlg.Hover}" Opacity="0.55" Visibility="Collapsed"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -35,12 +37,9 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style x:Key="NavButton" TargetType="Button">
-            <Setter Property="Width" Value="34"/>
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
+        <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource DlgIconButton}"/>
+        <Style TargetType="Button" BasedOn="{StaticResource DlgButton}"/>
+        <Style TargetType="TextBox" BasedOn="{StaticResource DlgTextBox}"/>
     </Window.Resources>
 
     <Grid Margin="14">
@@ -55,11 +54,11 @@
             <StackPanel Orientation="Horizontal">
                 <Button Style="{StaticResource NavButton}" Content="&#xE76B;" Click="Prev_Click" ToolTip="Previous month"/>
                 <Button Style="{StaticResource NavButton}" Content="&#xE76C;" Margin="4,0,10,0" Click="Next_Click" ToolTip="Next month"/>
-                <Button Content="Today" Width="72" Height="30" Click="Today_Click"/>
+                <Button Content="Today" MinWidth="80" Click="Today_Click"/>
             </StackPanel>
-            <TextBlock x:Name="HeaderText" FontSize="18" FontWeight="SemiBold"
+            <TextBlock x:Name="HeaderText" Style="{StaticResource DlgH1}" FontSize="20"
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            <TextBlock x:Name="CountText" Opacity="0.6" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            <TextBlock x:Name="CountText" Style="{StaticResource DlgCaption}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
         </Grid>
 
         <!-- three months (scale with the window) + note panel -->
@@ -79,15 +78,14 @@
                 </Grid>
             </Viewbox>
 
-            <Border Grid.Column="1" Margin="14,0,0,0" Padding="12" CornerRadius="4"
-                    Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="1">
+            <Border Grid.Column="1" Margin="14,0,0,0" Style="{StaticResource DlgCard}" Padding="14">
                 <DockPanel>
-                    <TextBlock x:Name="NoteTitle" DockPanel.Dock="Top" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                    <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-                        <Button DockPanel.Dock="Right" Content="Delete note" Width="92" Height="26" Click="DeleteNote_Click"/>
-                        <TextBlock x:Name="SavedText" Opacity="0.6" VerticalAlignment="Center" Text="Saved automatically"/>
+                    <TextBlock x:Name="NoteTitle" DockPanel.Dock="Top" Style="{StaticResource DlgH2}"/>
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Right" Content="Delete note" MinWidth="0" Height="30" Padding="12,0" Click="DeleteNote_Click"/>
+                        <TextBlock x:Name="SavedText" Style="{StaticResource DlgCaption}" VerticalAlignment="Center" Text="Saved automatically"/>
                     </DockPanel>
-                    <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" Padding="6"
+                    <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" VerticalContentAlignment="Top"
                              VerticalScrollBarVisibility="Auto" TextChanged="NoteBox_TextChanged"
                              ToolTip="Write a note for the selected day. Days with notes turn amber."/>
                 </DockPanel>
@@ -97,13 +95,13 @@
         <!-- footer -->
         <DockPanel Grid.Row="2" Margin="0,12,0,0">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Content="Import…" Width="92" Height="30" Margin="0,0,8,0" Click="Import_Click"
+                <Button Content="Import…" Margin="0,0,10,0" Click="Import_Click"
                         ToolTip="Import notes from a .json or .ics (iCalendar) file"/>
-                <Button Content="Export…" Width="92" Height="30" Margin="0,0,8,0" Click="Export_Click"
+                <Button Content="Export…" Margin="0,0,10,0" Click="Export_Click"
                         ToolTip="Export all notes to .json or .ics (iCalendar)"/>
-                <Button Content="Close" Width="92" Height="30" Click="Close_Click"/>
+                <Button Content="Close" Style="{StaticResource DlgPrimaryButton}" Click="Close_Click"/>
             </StackPanel>
-            <TextBlock Opacity="0.55" VerticalAlignment="Center"
+            <TextBlock Style="{StaticResource DlgCaption}" VerticalAlignment="Center"
                        Text="Click a day to write a note · amber = has a note · window size is remembered"/>
         </DockPanel>
     </Grid>

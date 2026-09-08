@@ -19,6 +19,7 @@ public partial class App : Application
     private StartHook? _hook;
     private StartMenuWindow? _menu;
     private SettingsWindow? _settingsWindow;
+    private CalendarWindow? _calendar;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -36,6 +37,8 @@ public partial class App : Application
         Catalog = new AppCatalog();
         _menu = new StartMenuWindow();
         Catalog.ScanAsync();
+
+        Launcher.BuiltinHandler = id => { if (id == "builtin:calendar") ShowCalendar(); };
 
         _hook = new StartHook();
         _hook.Toggle += () => _menu.ToggleMenu();
@@ -69,6 +72,13 @@ public partial class App : Application
         _hook.WinKeyEnabled = Settings.ReplaceWinKey;
         _hook.StartButtonEnabled = Settings.ReplaceStartButton;
         _hook.FallbackEnabled = Settings.ReplaceWinKey || Settings.ReplaceStartButton;
+    }
+
+    public void ShowCalendar()
+    {
+        if (_calendar is { IsLoaded: true }) { _calendar.Activate(); return; }
+        _calendar = new CalendarWindow();
+        _calendar.Show();
     }
 
     public void ShowSettings()

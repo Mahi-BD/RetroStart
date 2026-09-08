@@ -12,10 +12,14 @@ namespace WinlyStart.Core;
 /// </summary>
 public static class Launcher
 {
+    /// <summary>Set by the UI to open built-in items such as "builtin:calendar".</summary>
+    public static Action<string>? BuiltinHandler { get; set; }
+
     public static void Launch(AppEntry app)
     {
         try
         {
+            if (app.Id.StartsWith("builtin:", StringComparison.Ordinal)) { BuiltinHandler?.Invoke(app.Id); return; }
             // user-added exe / file / website: let the shell decide how to open it
             if (app.CustomTarget is { Length: > 0 } target) { Start(target); return; }
             if (app.IsPackaged)

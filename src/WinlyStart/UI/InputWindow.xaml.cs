@@ -11,6 +11,7 @@ public partial class InputWindow : Window
     public InputWindow()
     {
         InitializeComponent();
+        Dialog.Apply(this);
         Loaded += (_, _) => { ValueBox.Focus(); ValueBox.CaretIndex = ValueBox.Text.Length; };
     }
 

@@ -208,6 +208,26 @@ Fourth round (verified live):
   timed `DTSTART`, unfolds continuation lines, prefers DESCRIPTION over SUMMARY, and appends when a
   day already has a note. Verified: two-event `.ics` imported (merge + timed event), `.ics` exported.
 
+Fifth round — professional redesign + live tiles (verified live):
+- **Dialog design system** (`UI/DialogStyles.xaml` + `Core/Theme.cs` `Dlg.*` brushes, driven by
+  Windows 11 app-mode light/dark + accent). Settings, About, Add-website and Calendar are rebuilt
+  around cards, Windows-11 toggle switches, flat combos, an accent slider, primary/secondary buttons
+  and a dark title bar via DWM (`UI/Dialog.cs`). Settings also gained a sticky footer and scrolls.
+- **Live tiles** (Windows-10-style, `UI/LiveTiles.cs` + the tile template's second "live face").
+  Windows 11 has no live-tile platform, so these are our own faces for apps where we have real data:
+  a built-in **Calendar** tile (next note), the **Clock** tile (live time), and **Photos** (a
+  slideshow from the Pictures folder). The face slides up over the icon and back, staggered per tile
+  by `LivePhase`; a 1 s timer runs **only while the menu is open**. Per-tile on/off via the tile's
+  context menu (`Tile.Live`, persisted); small tiles are never live, as on Windows 10.
+- **Built-in Calendar app** (`builtin:calendar`) appears in the app list and is pinned by default;
+  `Launcher.BuiltinHandler` opens it inside Winly Start.
+- **Smoother tile drag.** Dragging now reflows live: the dragged tile parks in the cell under the
+  pointer and the others glide out of the way (`AnimatedPack` animates `Canvas.Left/Top`); on drop the
+  tile eases into place instead of snapping. Resize/unpin also animate. Group-header drag shows an
+  accent insertion line (`GroupInsertLine`) and drops at the indicated index.
+- **New app icon** (`Repo/Script/make_icon.py`): a modern accent-gradient plate with four rounded
+  white tiles and a soft shadow, rendered at 4× and downsampled; the `.ico` carries 16–256 px frames.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

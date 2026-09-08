@@ -5,6 +5,10 @@ using WinlyStart.Core;
 
 namespace WinlyStart.UI;
 
+/// <summary>Which live content a tile can show. Windows 11 has no live-tile platform, so these are
+/// Winly Start's own faces for the apps where it has real data.</summary>
+public enum LiveKind { None, Calendar, Clock, Photos }
+
 /// <summary>One tile on the board. Geometry is in 48 px units with 4 px gutters, like Windows 10.</summary>
 public sealed class TileVm : INotifyPropertyChanged
 {
@@ -17,16 +21,41 @@ public sealed class TileVm : INotifyPropertyChanged
     private int _col, _row;
     private bool _dragging;
 
-    public TileVm(AppEntry app, TileSize size, int col, int row)
+    public TileVm(AppEntry app, TileSize size, int col, int row, bool live = true)
     {
-        App = app; _size = size; _col = col; _row = row;
+        App = app; _size = size; _col = col; _row = row; _live = live;
         app.PropertyChanged += (_, e) => { if (e.PropertyName == "Item[]") Raise(nameof(Image)); };
     }
+
+    // ── live tile ──
+    private bool _live, _showLive;
+    private string _liveTitle = string.Empty, _liveBig = string.Empty, _liveSub = string.Empty;
+    private BitmapSource? _liveImage;
+
+    public LiveKind Kind =>
+        App.Id == "builtin:calendar" ? LiveKind.Calendar
+        : App.Id.Contains("Microsoft.WindowsAlarms", StringComparison.OrdinalIgnoreCase) ? LiveKind.Clock
+        : App.Id.Contains("Microsoft.Windows.Photos", StringComparison.OrdinalIgnoreCase) ? LiveKind.Photos
+        : LiveKind.None;
+    /// <summary>Small tiles were never live on Windows 10 either.</summary>
+    public bool CanBeLive => Kind != LiveKind.None && _size != TileSize.Small;
+    public bool Live { get => _live; set { _live = value; Raise(nameof(Live)); Raise(nameof(LiveMenuText)); if (!value) ShowLive = false; } }
+    public string LiveMenuText => _live ? "Turn Live Tile off" : "Turn Live Tile on";
+    /// <summary>true while the live face is up; the template slides between faces on change.</summary>
+    public bool ShowLive { get => _showLive; set { if (_showLive == value) return; _showLive = value; Raise(nameof(ShowLive)); } }
+    public string LiveTitle { get => _liveTitle; set { _liveTitle = value; Raise(nameof(LiveTitle)); } }
+    public string LiveBig { get => _liveBig; set { _liveBig = value; Raise(nameof(LiveBig)); } }
+    public string LiveSub { get => _liveSub; set { _liveSub = value; Raise(nameof(LiveSub)); } }
+    public BitmapSource? LiveImage { get => _liveImage; set { _liveImage = value; Raise(nameof(LiveImage)); Raise(nameof(LiveHasImage)); } }
+    public bool LiveHasImage => _liveImage != null;
+    public double LiveBigSize => _size == TileSize.Large ? 64 : 38;
+    /// <summary>Stable per-tile phase so live tiles don't all flip in lock-step.</summary>
+    public int LivePhase => Math.Abs(App.Id.GetHashCode() % 5);
 
     public TileSize Size
     {
         get => _size;
-        set { _size = value; Raise(nameof(Size)); Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(ShowLabel)); Raise(nameof(ImageSize)); Raise(nameof(ImageWidth)); Raise(nameof(ImageHeight)); Raise(nameof(Image)); }
+        set { _size = value; Raise(nameof(Size)); Raise(nameof(Width)); Raise(nameof(Height)); Raise(nameof(ShowLabel)); Raise(nameof(ImageSize)); Raise(nameof(ImageWidth)); Raise(nameof(ImageHeight)); Raise(nameof(Image)); Raise(nameof(CanBeLive)); Raise(nameof(LiveBigSize)); if (!CanBeLive) ShowLive = false; }
     }
     public int Col { get => _col; set { _col = value; Raise(nameof(X)); } }
     public int Row { get => _row; set { _row = value; Raise(nameof(Y)); } }
@@ -55,7 +84,7 @@ public sealed class TileVm : INotifyPropertyChanged
     private int SourceSize => _size switch { TileSize.Large => 256, TileSize.Small => 64, _ => 96 };
     public BitmapSource? Image => App[SourceSize];
 
-    public Tile ToModel() => new() { AppId = App.Id, Size = _size, Col = _col, Row = _row };
+    public Tile ToModel() => new() { AppId = App.Id, Size = _size, Col = _col, Row = _row, Live = _live };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
@@ -158,7 +187,7 @@ public static class TileBoard
             {
                 var app = catalog.Find(t.AppId);
                 if (app == null) continue;                       // uninstalled since last run
-                vm.Tiles.Add(new TileVm(app, t.Size, t.Col, t.Row) { Group = vm });
+                vm.Tiles.Add(new TileVm(app, t.Size, t.Col, t.Row, t.Live) { Group = vm });
             }
             vm.Pack();
             groups.Add(vm);
@@ -183,10 +212,12 @@ public static class TileBoard
             return g;
         }
         var layout = new TileLayout();
-        layout.Groups.Add(Group("Productivity",
+        var productivity = Group("Productivity",
             ("Microsoft Edge", TileSize.Wide), ("Mail", TileSize.Medium), ("Calendar", TileSize.Medium),
             ("Calculator", TileSize.Medium), ("Microsoft Store", TileSize.Medium), ("Photos", TileSize.Medium),
-            ("Settings", TileSize.Medium), ("Notepad", TileSize.Medium), ("Paint", TileSize.Medium)));
+            ("Settings", TileSize.Medium), ("Notepad", TileSize.Medium), ("Paint", TileSize.Medium));
+        productivity.Tiles.Insert(0, new Tile { AppId = "builtin:calendar", Size = TileSize.Medium });   // live calendar tile
+        layout.Groups.Add(productivity);
         layout.Groups.Add(Group("Explore",
             ("Weather", TileSize.Wide), ("News", TileSize.Medium), ("Clock", TileSize.Medium),
             ("Camera", TileSize.Medium), ("Snipping Tool", TileSize.Medium), ("Microsoft To Do", TileSize.Medium)));

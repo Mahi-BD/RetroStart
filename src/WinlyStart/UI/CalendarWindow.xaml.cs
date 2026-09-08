@@ -28,12 +28,16 @@ public partial class CalendarWindow : Window
 
     private static readonly Brush Amber = Frozen(Color.FromRgb(0xF7, 0xB5, 0x00));
     private static readonly Brush AmberSoft = Frozen(Color.FromRgb(0xFF, 0xE9, 0xB0));
-    private static readonly Brush Grey = Frozen(Color.FromRgb(0x9A, 0x9A, 0x9A));
     private static Brush Accent => Frozen(Theme.Current.Accent);
+    private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
+    private static Brush Grey => Res("Dlg.TextSecondary");
+    private static Brush CellBg => Res("Dlg.Card");
+    private static Brush CellText => Res("Dlg.Text");
 
     public CalendarWindow()
     {
         InitializeComponent();
+        Dialog.Apply(this);
         _data = Store.Load("calendar.json", JsonCtx.Default.CalendarData);
         if (_data.Width >= MinWidth && _data.Height >= MinHeight) { Width = _data.Width; Height = _data.Height; }
 
@@ -119,8 +123,8 @@ public partial class CalendarWindow : Window
         bool selected = d == _selected;
         bool today = d == DateTime.Today;
 
-        b.Background = selected ? Accent : hasNote ? (inMonth ? Amber : AmberSoft) : Brushes.White;
-        b.Foreground = selected ? Brushes.White : inMonth ? Brushes.Black : Grey;
+        b.Background = selected ? Accent : hasNote ? (inMonth ? Amber : AmberSoft) : CellBg;
+        b.Foreground = selected ? Brushes.White : hasNote ? Brushes.Black : inMonth ? CellText : Grey;
         b.BorderBrush = today ? Accent : selected && hasNote ? Amber : Brushes.Transparent;
         b.FontWeight = hasNote || today || selected ? FontWeights.SemiBold : FontWeights.Normal;
         b.Opacity = inMonth || hasNote || selected ? 1 : 0.55;

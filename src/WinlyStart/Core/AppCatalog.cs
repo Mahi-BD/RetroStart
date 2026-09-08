@@ -203,6 +203,13 @@ public sealed class AppCatalog
             });
         }
 
+        // built-in items (open inside Winly Start itself)
+        result.Add(new AppEntry
+        {
+            Id = "builtin:calendar", Name = "Calendar", ParsingName = "res:Assets/calendar.png",
+            Created = DateTime.MinValue, Launches = Usage.Launches.GetValueOrDefault("builtin:calendar"),
+        });
+
         // forget usage of apps that no longer exist
         var ids = new HashSet<string>(result.Select(a => a.Id), StringComparer.OrdinalIgnoreCase);
         foreach (var k in Usage.Launches.Keys.Where(k => !ids.Contains(k)).ToList()) Usage.Launches.Remove(k);

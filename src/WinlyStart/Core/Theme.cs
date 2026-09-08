@@ -16,6 +16,8 @@ public sealed class Theme
     private const string Dwm = @"Software\Microsoft\Windows\DWM";
 
     public bool IsLight { get; private set; }
+    /// <summary>Windows "app mode" (AppsUseLightTheme) — what our dialog windows follow.</summary>
+    public bool IsAppLight { get; private set; } = true;
     public bool AccentOnStart { get; private set; }
     public bool Transparency { get; private set; } = true;
     public Color Accent { get; private set; } = Color.FromRgb(0, 120, 215);
@@ -46,6 +48,8 @@ public sealed class Theme
     {
         int light = ReadDword(Personalize, "SystemUsesLightTheme", 0);
         IsLight = _mode switch { ThemeMode.Light => true, ThemeMode.Dark => false, _ => light == 1 };
+        int appsLight = ReadDword(Personalize, "AppsUseLightTheme", 1);
+        IsAppLight = _mode switch { ThemeMode.Light => true, ThemeMode.Dark => false, _ => appsLight == 1 };
         AccentOnStart = ReadDword(Personalize, "ColorPrevalence", 0) == 1;
         Transparency = ReadDword(Personalize, "EnableTransparency", 1) == 1;
 
@@ -81,6 +85,22 @@ public sealed class Theme
         r["Rs.TileBorderPressed"] = Brush(Color.FromArgb(0x99, fg.R, fg.G, fg.B));
         r["Rs.Search"] = Brush(darkText ? Colors.White : Color.FromRgb(0x2B, 0x2B, 0x2B));
         r["Rs.TintColor"] = Tint;
+
+        // Dialog windows (Settings, About, Calendar…): Windows 11 app-mode palette, flat cards.
+        bool dk = !IsAppLight;
+        r["Dlg.Bg"] = Brush(dk ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3));
+        r["Dlg.Card"] = Brush(dk ? Color.FromRgb(0x2B, 0x2B, 0x2B) : Colors.White);
+        r["Dlg.Border"] = Brush(dk ? Color.FromRgb(0x3D, 0x3D, 0x3D) : Color.FromRgb(0xE3, 0xE3, 0xE3));
+        r["Dlg.Text"] = Brush(dk ? Colors.White : Color.FromRgb(0x1B, 0x1B, 0x1B));
+        r["Dlg.TextSecondary"] = Brush(dk ? Color.FromRgb(0xA6, 0xA6, 0xA6) : Color.FromRgb(0x61, 0x61, 0x61));
+        r["Dlg.Control"] = Brush(dk ? Color.FromRgb(0x33, 0x33, 0x33) : Color.FromRgb(0xFB, 0xFB, 0xFB));
+        r["Dlg.ControlBorder"] = Brush(dk ? Color.FromRgb(0x4A, 0x4A, 0x4A) : Color.FromRgb(0xD0, 0xD0, 0xD0));
+        r["Dlg.Hover"] = Brush(dk ? Color.FromRgb(0x38, 0x38, 0x38) : Color.FromRgb(0xEA, 0xEA, 0xEA));
+        r["Dlg.Pressed"] = Brush(dk ? Color.FromRgb(0x2A, 0x2A, 0x2A) : Color.FromRgb(0xDE, 0xDE, 0xDE));
+        r["Dlg.Accent"] = Brush(Accent);
+        r["Dlg.AccentHover"] = Brush(Color.FromRgb((byte)Math.Min(255, Accent.R + 24), (byte)Math.Min(255, Accent.G + 24), (byte)Math.Min(255, Accent.B + 24)));
+        r["Dlg.AccentText"] = Brush(Luminance(Accent) > 0.6 ? Colors.Black : Colors.White);
+        r["Dlg.SwitchOff"] = Brush(dk ? Color.FromRgb(0x9A, 0x9A, 0x9A) : Color.FromRgb(0x86, 0x86, 0x86));
         // The window paints this itself only when the OS blur is unavailable; otherwise DWM paints the tint.
         r["Rs.Surface"] = Brush(Transparency ? Colors.Transparent : Color.FromRgb(Tint.R, Tint.G, Tint.B));
     }

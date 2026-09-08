@@ -1,22 +1,44 @@
 <Window x:Class="WinlyStart.UI.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="About Winly Start" Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        Title="About Winly Start" Width="520" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" ShowInTaskbar="False"
-        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
-    <StackPanel Margin="24,20">
-        <TextBlock Text="Winly Start" FontSize="22" FontWeight="SemiBold"/>
-        <TextBlock x:Name="VersionText" Opacity="0.7" Margin="0,2,0,14"/>
-        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
-                   Text="The Windows 10 Start menu, back on Windows 11. Open source under the MIT licence."/>
-        <TextBlock TextWrapping="Wrap" Opacity="0.75" Margin="0,0,0,12"
-                   Text="Winly Start never modifies Windows. Quit it from the tray icon and the Windows 11 Start menu is back instantly."/>
-        <TextBlock Margin="0,0,0,4">
-            <Hyperlink NavigateUri="https://github.com/Mahi-BD/WinlyStart" RequestNavigate="Link_Click">
-                github.com/Mahi-BD/WinlyStart
-            </Hyperlink>
-        </TextBlock>
-        <TextBlock x:Name="DataPathText" Opacity="0.6" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,0"/>
-        <Button Content="Close" Width="90" Height="30" HorizontalAlignment="Right" Margin="0,16,0,0" IsCancel="True" Click="Close_Click"/>
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True"
+        Background="{DynamicResource Dlg.Bg}" Foreground="{DynamicResource Dlg.Text}">
+    <Window.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource DlgButton}"/>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource DlgBody}"/>
+    </Window.Resources>
+    <StackPanel Margin="28,26,28,22">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+            <Image Source="pack://application:,,,/Assets/WinlyStart.png" Width="72" Height="72" Margin="0,0,18,0"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="Winly Start" Style="{StaticResource DlgH1}"/>
+                <TextBlock x:Name="VersionText" Style="{StaticResource DlgCaption}" Margin="0,2,0,0"/>
+                <TextBlock Text="Open source · MIT licence" Style="{StaticResource DlgCaption}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Style="{StaticResource DlgCard}">
+            <StackPanel>
+                <TextBlock Text="The Windows 10 Start menu, back on Windows 11." FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Text="Left rail, A–Z app list, live tiles and a tile board that follow your Windows 11 theme — with the Windows 10 look. Winly Start never modifies Windows: quit it from the tray icon and the Windows 11 Start menu is back instantly."/>
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource DlgCard}">
+            <StackPanel>
+                <TextBlock Text="Your data" Style="{StaticResource DlgH2}"/>
+                <TextBlock x:Name="DataPathText" Style="{StaticResource DlgCaption}" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Open data folder" Click="OpenData_Click" Margin="0,0,10,0"/>
+                    <Button Content="GitHub" Click="GitHub_Click" Margin="0,0,10,0"/>
+                    <Button Content="Report an issue" Click="Issue_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Button Content="Close" Style="{StaticResource DlgPrimaryButton}" HorizontalAlignment="Right" IsCancel="True" Click="Close_Click"/>
     </StackPanel>
 </Window>

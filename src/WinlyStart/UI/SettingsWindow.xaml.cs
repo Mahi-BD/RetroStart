@@ -8,6 +8,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        Dialog.Apply(this);
         var s = App.Settings;
         WinKey.IsChecked = s.ReplaceWinKey;
         StartButton.IsChecked = s.ReplaceStartButton;

@@ -36,7 +36,7 @@ the app and Windows 11 is exactly as it was.
 | Tiles: Small / Medium / Wide / Large, groups with editable names, drag to rearrange | ✅ |
 | Packaged (Store) apps with their coloured tile logos | ✅ |
 | Acrylic blur, accent colour on Start, transparency on/off — follows Windows 11 settings | ✅ live |
-| Live tiles | ❌ the platform API no longer exists on Windows 11 |
+| Live tiles | ✅ Winly Start's own for Calendar, Clock and Photos (Windows 11 has no live-tile platform) |
 
 Beyond Windows 10: right-click empty board space to **add any program, file, shortcut or website** as a
 tile, drag group headers to **reorder groups**, drag the corner grip to **resize** the menu, and turn on

@@ -32,6 +32,23 @@ public static class ShellIcons
         finally { if (hbm != IntPtr.Zero) Native.DeleteObject(hbm); }
     }
 
+    /// <summary>Decode a packed application resource (PNG) at the requested size.</summary>
+    public static BitmapSource? LoadResource(string relativePath, int pixels)
+    {
+        try
+        {
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = new Uri("pack://application:,,,/" + relativePath, UriKind.Absolute);
+            bi.DecodePixelWidth = pixels;
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.EndInit();
+            bi.Freeze();
+            return bi;
+        }
+        catch { return null; }
+    }
+
     private static BitmapSource? FromHBitmap(IntPtr hbm)
     {
         if (Native.GetObjectW(hbm, Marshal.SizeOf<Native.BITMAP>(), out var bm) == 0) return null;
@@ -97,7 +114,10 @@ public static class IconLoader
     {
         foreach (var (app, size) in Queue.GetConsumingEnumerable())
         {
-            var bmp = ShellIcons.Load(app.ParsingName, (int)Math.Round(size * _dpiScale));
+            int px = (int)Math.Round(size * _dpiScale);
+            var bmp = app.ParsingName.StartsWith("res:", StringComparison.Ordinal)
+                ? ShellIcons.LoadResource(app.ParsingName[4..], px)
+                : ShellIcons.Load(app.ParsingName, px);
             Pending.TryRemove((app.Id, size), out _);
             if (bmp == null) continue;
             Application.Current?.Dispatcher.BeginInvoke(() => app.SetIcon(size, bmp));

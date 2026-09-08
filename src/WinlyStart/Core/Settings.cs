@@ -71,6 +71,8 @@ public sealed class Tile
     public TileSize Size { get; set; } = TileSize.Medium;
     public int Col { get; set; }
     public int Row { get; set; }
+    /// <summary>Live tile on/off (only meaningful for apps that have live content).</summary>
+    public bool Live { get; set; } = true;
 }
 
 public sealed class TileGroup
