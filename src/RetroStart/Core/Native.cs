@@ -344,4 +344,12 @@ internal static partial class Native
         inputs[1].u.ki = new KEYBDINPUT { wVk = vk, dwFlags = KEYEVENTF_KEYUP, dwExtraInfo = extraInfo };
         SendInput(2, inputs, Marshal.SizeOf<INPUT>());
     }
+
+    public static INPUT Key(ushort vk, bool up, UIntPtr extraInfo) => new()
+    {
+        type = INPUT_KEYBOARD,
+        u = new INPUTUNION { ki = new KEYBDINPUT { wVk = vk, dwFlags = up ? KEYEVENTF_KEYUP : 0, dwExtraInfo = extraInfo } },
+    };
+
+    public static void SendKeys(params INPUT[] inputs) => SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
 }

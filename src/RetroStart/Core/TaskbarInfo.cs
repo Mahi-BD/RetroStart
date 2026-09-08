@@ -55,7 +55,13 @@ internal static class TaskbarInfo
         if (Interlocked.Exchange(ref _refreshing, 1) == 1) return;
         ThreadPool.QueueUserWorkItem(_ =>
         {
-            try { _startButton = FindStartButton(); _startButtonStamp = Environment.TickCount64; }
+            try
+            {
+                _startButton = FindStartButton();
+                _startButtonStamp = Environment.TickCount64;
+                if (StartHook.DebugEnabled)
+                    StartHook.Debug($"StartButton refresh → {(_startButton is { } r ? $"{r.Left},{r.Top} {r.Width}x{r.Height}" : "null")}");
+            }
             finally { Interlocked.Exchange(ref _refreshing, 0); }
         });
     }

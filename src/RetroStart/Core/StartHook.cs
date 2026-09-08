@@ -14,7 +14,11 @@ namespace RetroStart.Core;
 public sealed class StartHook : IDisposable
 {
     private static readonly UIntPtr Magic = new(0x52535452); // "RSTR" tags our own injected key
-    private const ushort DummyVk = 0xE8;                       // unassigned virtual key, harmless
+    // Masking key used to turn a lone Win tap into a "chord" so the shell does not open its own menu.
+    // Must be a key the shell actually counts: the unassigned 0xE8 is ignored on Windows 11 build 26200,
+    // whereas VK_CONTROL is always counted and, since only lone taps reach this path, injecting it has no
+    // visible effect and cannot corrupt a real Win+X combo.
+    private const ushort MaskVk = Native.VK_CONTROL;
 
     private readonly Native.HookProc _kbProc;
     private readonly Native.HookProc _mouseProc;
@@ -68,22 +72,32 @@ public sealed class StartHook : IDisposable
             if (down)
             {
                 // First event of a press (auto-repeat arrives every ~30 ms; a stale state from a
-                // missed key-up is older than that). Inject a harmless key so Windows sees a
-                // "Win + something" chord and does not open its own Start menu on release.
+                // missed key-up is older than that).
                 bool fresh = !_winDown || now - _lastWinDown > 150;
                 _lastWinDown = now;
-                if (fresh)
-                {
-                    _winDown = true;
-                    _otherKey = false;
-                    Native.SendKey(DummyVk, Magic);
-                }
+                if (fresh) { _winDown = true; _otherKey = false; }
             }
             else
             {
                 bool tap = _winDown && !_otherKey;
                 _winDown = false;
-                if (tap) Post(Toggle);
+                if (tap)
+                {
+                    // A lone Win tap. Swallow this real key-up (return 1) and re-emit the release as a
+                    // chord: a harmless dummy key, then a tagged Win-up we let pass. Windows then sees
+                    // Win-down · dummy · Win-up — a "Win + something" combo — and does NOT open its own
+                    // Start menu. Injecting during the key-up hook and *also* passing the key-up through
+                    // does not work: the injected events queue AFTER the real key-up, too late to mask.
+                    // Real Win+X chords never reach here (they set _otherKey and pass through untouched),
+                    // so swallowing is safe.
+                    Native.SendKeys(
+                        Native.Key(MaskVk, up: false, Magic),
+                        Native.Key(MaskVk, up: true, Magic),
+                        Native.Key((ushort)k.vkCode, up: true, Magic));
+                    Debug($"winkey tap → toggle (vk={k.vkCode})");
+                    Post(Toggle);
+                    return (IntPtr)1;
+                }
             }
             return Native.CallNextHookEx(_kbHook, code, wParam, lParam);
         }
@@ -105,7 +119,10 @@ public sealed class StartHook : IDisposable
         if (msg == Native.WM_LBUTTONDOWN)
         {
             var m = Marshal.PtrToStructure<Native.MSLLHOOKSTRUCT>(lParam);
-            if (TaskbarInfo.StartButton is { } r && r.Contains(m.pt.X, m.pt.Y))
+            var r = TaskbarInfo.StartButton;
+            if (DebugEnabled)
+                Debug($"click ({m.pt.X},{m.pt.Y}) startBtn={(r is { } rr ? $"{rr.Left},{rr.Top} {rr.Width}x{rr.Height}" : "null")} hit={(r is { } h && h.Contains(m.pt.X, m.pt.Y))}");
+            if (r is { } rect && rect.Contains(m.pt.X, m.pt.Y))
             {
                 _swallowUp = true;
                 Post(Toggle);
@@ -137,6 +154,21 @@ public sealed class StartHook : IDisposable
     private static void Post(Action? a)
     {
         if (a != null) Application.Current?.Dispatcher.BeginInvoke(a);
+    }
+
+    /// <summary>Opt-in trace to %LocalAppData%\RetroStart\debug.log (set env RETROSTART_DEBUG=1). Off by default.</summary>
+    internal static readonly bool DebugEnabled =
+        Environment.GetEnvironmentVariable("RETROSTART_DEBUG") is { Length: > 0 } v && v != "0";
+
+    internal static void Debug(string msg)
+    {
+        if (!DebugEnabled) return;
+        try
+        {
+            System.IO.Directory.CreateDirectory(Store.Dir);
+            System.IO.File.AppendAllText(System.IO.Path.Combine(Store.Dir, "debug.log"), $"[{DateTime.Now:HH:mm:ss.fff}] {msg}\n");
+        }
+        catch { }
     }
 
     public void Dispose()

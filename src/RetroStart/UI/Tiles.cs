@@ -42,13 +42,13 @@ public sealed class TileVm : INotifyPropertyChanged
     public string Name => App.Name;
     public bool CanRunAsAdmin => !App.IsPackaged;
 
-    /// <summary>Packaged apps ship a square logo on a coloured plate → fill the tile like Windows 10 did.
-    /// Desktop apps get their icon centred.</summary>
+    /// <summary>Icon centred on the accent plate, Windows 10 proportions. Packaged (Store) apps ship a
+    /// plated square logo, so it may sit a little larger than a desktop app's icon.</summary>
     public int ImageSize => App.IsPackaged
-        ? _size switch { TileSize.Small => 48, TileSize.Large => 204, _ => 100 }
+        ? _size switch { TileSize.Small => 32, TileSize.Large => 128, _ => 64 }
         : _size switch { TileSize.Small => 24, TileSize.Large => 96, _ => 48 };
-    public double ImageWidth => App.IsPackaged && _size != TileSize.Wide ? Width : ImageSize;
-    public double ImageHeight => App.IsPackaged && _size != TileSize.Wide ? Height : ImageSize;
+    public double ImageWidth => ImageSize;
+    public double ImageHeight => ImageSize;
     public BitmapSource? Image => App[ImageSize];
 
     public Tile ToModel() => new() { AppId = App.Id, Size = _size, Col = _col, Row = _row };

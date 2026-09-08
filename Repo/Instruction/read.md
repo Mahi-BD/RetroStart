@@ -143,6 +143,28 @@ Repo/Instruction/read.md   this file
 `OpenAtStartButton` (align under the Win11 Start button instead of the left corner),
 `TrimMemoryWhenHidden`.
 
+## Verified on Windows (2026-09-08, build 26200.8037, light theme, centred taskbar)
+Tested live on a Windows 11 Pro box (self-contained build). Confirmed working:
+- Windows key opens/closes the menu and the **Windows 11 menu is suppressed**; Ctrl+Esc opens it.
+- Start-button click opens it (button located via UIA at a centred taskbar), with proper foreground.
+- Type-to-search filters the list; clicking a tile or list item launches the app; the menu then
+  light-dismisses; clicking outside dismisses it. Theme (light/accent) is picked up live.
+- ~65–165 MB working set, no exceptions in `error.log`.
+
+Fixes made during that testing (all in v0.1):
+- **Win-key mask.** The unassigned `0xE8` dummy key does *not* register as a chord on build 26200, so
+  the mask uses `VK_CONTROL`, and the lone-tap key-up is **swallowed and re-emitted** (dummy + tagged
+  Win-up) — injecting during the key-up and letting it pass queues the dummy too late.
+- Tile press/launch threw because WPF freezes the template's `ScaleTransform`; each tile now gets its
+  own mutable transform on first interaction (`EnsureTransform`).
+- A short post-show "deactivation grace" re-asserts foreground when Windows churns focus on open, but
+  must bail when the menu is already closing (else launching an app re-opened the menu).
+- Opt-in trace to `%LocalAppData%\RetroStart\debug.log` via env `RETROSTART_DEBUG=1`.
+
+Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
+no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
+surface still tints correctly to the theme.
+
 ## Roadmap
 - v0.1 (this scaffold): everything above, static tiles, single primary-monitor taskbar.
 - v0.2: multi-monitor (open on the monitor whose Start button was clicked), group drag,

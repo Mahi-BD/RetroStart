@@ -16,8 +16,11 @@ It **replaces** the Windows 11 Start menu in everyday use: the Start button, the
 key and Ctrl+Esc all open Retro Start. It does this without touching Windows itself — quit
 the app and Windows 11 is exactly as it was.
 
-> Status: **v0.1 — early preview.** It builds cleanly and the design is complete, but it is
-> young software. Please open issues with your Windows build number and what you saw.
+> Status: **v0.1 — early preview.** Verified running on Windows 11 Pro (build 26200): the Windows
+> key and Start button open it (and suppress the Windows 11 menu), search and app-launching work,
+> and it follows the system theme. Still young software — please open issues with your Windows build
+> number and what you saw. Known rough edge: the acrylic renders as a solid tint on current Windows 11
+> builds (real blur is on the roadmap).
 
 ## Features
 

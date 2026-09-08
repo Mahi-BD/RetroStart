@@ -82,12 +82,6 @@
             <Border x:Name="Tile" Width="{Binding Width}" Height="{Binding Height}" Background="{DynamicResource Rs.Accent}"
                     BorderThickness="2" BorderBrush="Transparent" RenderTransformOrigin="0.5,0.5" ToolTip="{Binding Name}"
                     MouseLeftButtonDown="Tile_MouseDown" MouseMove="Tile_MouseMove" MouseLeftButtonUp="Tile_MouseUp">
-                <Border.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </Border.RenderTransform>
                 <Border.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Unpin from Start" Click="Unpin_Click"/>

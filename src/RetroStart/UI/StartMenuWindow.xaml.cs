@@ -20,6 +20,7 @@ public partial class StartMenuWindow : Window
     private readonly ObservableCollection<TileGroupVm> _groups = new();
     private readonly IntPtr _hwnd;
     private bool _recentExpanded, _tilesLoaded, _visible, _closing;
+    private long _shownAt;
     private string? _filter;
 
     // tile drag state
@@ -75,6 +76,7 @@ public partial class StartMenuWindow : Window
     {
         bool wasClosing = _closing;
         _closing = false;
+        _shownAt = Environment.TickCount64;
         if (!_visible)
         {
             _visible = true;
@@ -86,6 +88,7 @@ public partial class StartMenuWindow : Window
         Native.ForceForeground(_hwnd);
         Activate();
         AppList.Focus();
+        StartHook.Debug($"ShowMenu visible={_visible} fg-after={(Native.GetForegroundWindow() == _hwnd)}");
     }
 
     public void HideMenu()
@@ -153,7 +156,19 @@ public partial class StartMenuWindow : Window
 
     private void Window_Deactivated(object? sender, EventArgs e)
     {
-        if (!_visible) return;
+        if (!_visible || _closing) return;   // already hiding (e.g. launched an app) → let it hide
+        // Ignore a deactivation in the first moments after showing: opening our window makes the
+        // Windows 11 menu (or the previously-focused app) briefly churn the foreground, and we must
+        // not hide ourselves in that window. We re-assert the foreground instead.
+        if (Environment.TickCount64 - _shownAt < 400)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                if (_visible && !_closing && !IsActive) { Native.ForceForeground(_hwnd); Activate(); }
+            }));
+            StartHook.Debug("Deactivated (grace) → re-assert");
+            return;
+        }
         // Our own popups/context menus briefly take the foreground; only hide for foreign windows.
         Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
         {
@@ -161,6 +176,7 @@ public partial class StartMenuWindow : Window
             var fg = Native.GetForegroundWindow();
             Native.GetWindowThreadProcessId(fg, out uint pid);
             if (fg != IntPtr.Zero && pid == Environment.ProcessId && !IsOtherWindowOfOurs(fg)) return;
+            StartHook.Debug("Deactivated → hide");
             HideMenu();
         }));
     }
@@ -389,8 +405,18 @@ public partial class StartMenuWindow : Window
 
     // ───────────────────────── tiles ─────────────────────────
 
-    private static ScaleTransform Scale(Border b) => (ScaleTransform)((TransformGroup)b.RenderTransform).Children[0];
-    private static TranslateTransform Translate(Border b) => (TranslateTransform)((TransformGroup)b.RenderTransform).Children[1];
+    // The transform declared in the tile DataTemplate is frozen by WPF's template optimisation, so we
+    // give each tile its own mutable TransformGroup the first time it is touched.
+    private static TransformGroup EnsureTransform(Border b)
+    {
+        if (b.RenderTransform is TransformGroup { IsFrozen: false } g && g.Children.Count == 2) return g;
+        g = new TransformGroup { Children = { new ScaleTransform(), new TranslateTransform() } };
+        b.RenderTransformOrigin = new Point(0.5, 0.5);
+        b.RenderTransform = g;
+        return g;
+    }
+    private static ScaleTransform Scale(Border b) => (ScaleTransform)EnsureTransform(b).Children[0];
+    private static TranslateTransform Translate(Border b) => (TranslateTransform)EnsureTransform(b).Children[1];
 
     private void Tile_MouseDown(object sender, MouseButtonEventArgs e)
     {
