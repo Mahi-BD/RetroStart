@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>RetroStart</RootNamespace>
+    <AssemblyName>RetroStart</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets/RetroStart.ico</ApplicationIcon>
+    <Version>0.1.0</Version>
+    <Authors>Retro Start contributors</Authors>
+    <Product>Retro Start</Product>
+    <Description>The Windows 10 Start menu, back on Windows 11.</Description>
+    <Copyright>MIT License</Copyright>
+    <!-- lets the project compile on Linux/macOS CI boxes; it only runs on Windows -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- memory / size discipline -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <TieredPGO>true</TieredPGO>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets/RetroStart.ico" />
+  </ItemGroup>
+
+</Project>

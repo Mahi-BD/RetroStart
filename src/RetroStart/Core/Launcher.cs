@@ -1,0 +1,121 @@
+using System.Diagnostics;
+using System.IO;
+using System.Security.Principal;
+using System.Text;
+
+namespace RetroStart.Core;
+
+/// <summary>
+/// Everything that leaves the process: launching apps, opening shell locations, and the
+/// power/session actions the Windows 10 Start menu exposes. Only ever called from an
+/// explicit user click.
+/// </summary>
+public static class Launcher
+{
+    public static void Launch(AppEntry app)
+    {
+        try
+        {
+            if (app.IsPackaged)
+            {
+                string aumid = app.Id["uwp:".Length..];
+                try
+                {
+                    var mgr = (Native.IApplicationActivationManager)new Native.ApplicationActivationManager();
+                    if (mgr.ActivateApplication(aumid, null, 0, out _) == 0) return;
+                }
+                catch { /* fall through to the explorer route */ }
+                Start("explorer.exe", "shell:AppsFolder\\" + aumid);
+            }
+            else Start(app.Id);
+        }
+        catch { /* app gone / access denied — Windows shows its own error where applicable */ }
+    }
+
+    public static void RunAsAdmin(AppEntry app)
+    {
+        if (app.IsPackaged) { Launch(app); return; }
+        try { Process.Start(new ProcessStartInfo(app.Id) { UseShellExecute = true, Verb = "runas" }); }
+        catch { /* UAC cancelled */ }
+    }
+
+    public static void OpenFileLocation(AppEntry app)
+    {
+        if (app.IsPackaged) return;
+        Start("explorer.exe", "/select,\"" + app.Id + "\"");
+    }
+
+    public static void Uninstall(AppEntry app) => Start("ms-settings:appsfeatures");
+
+    public static void Start(string fileName, string? args = null)
+    {
+        try { Process.Start(new ProcessStartInfo(fileName, args ?? string.Empty) { UseShellExecute = true }); }
+        catch { }
+    }
+
+    // ── left rail ──
+    public static void OpenDocuments() => Start("explorer.exe", "shell:Personal");
+    public static void OpenPictures() => Start("explorer.exe", "shell:My Pictures");
+    public static void OpenSettings() => Start("ms-settings:");
+    public static void OpenAccountSettings() => Start("ms-settings:yourinfo");
+    public static void OpenFileExplorer() => Start("explorer.exe");
+
+    // ── power / session (identical to what the Windows 10 Start menu does) ──
+    public static void Lock() => Native.LockWorkStation();
+    public static void SignOut() { if (!Native.ExitWindowsEx(Native.EWX_LOGOFF, 0)) Shutdown("/l"); }
+    public static void Sleep() => Native.SetSuspendState(false, false, false);
+    public static void Restart() => Shutdown("/r /t 0");
+    public static void ShutDown()
+    {
+        // hybrid = Windows 10 "Shut down" with fast startup; plain shutdown if that is unavailable
+        if (Shutdown("/s /hybrid /t 0") != 0) Shutdown("/s /t 0");
+    }
+
+    private static int Shutdown(string args)
+    {
+        try
+        {
+            using var p = Process.Start(new ProcessStartInfo("shutdown.exe", args) { UseShellExecute = false, CreateNoWindow = true });
+            p!.WaitForExit(5000);
+            return p.HasExited ? p.ExitCode : 0;
+        }
+        catch { return -1; }
+    }
+}
+
+/// <summary>Current user's display name and account picture (for the left rail).</summary>
+public static class UserInfo
+{
+    public static string DisplayName
+    {
+        get
+        {
+            try
+            {
+                var sb = new StringBuilder(256);
+                uint size = (uint)sb.Capacity;
+                if (Native.GetUserNameExW(Native.NameDisplay, sb, ref size) != 0 && sb.Length > 0) return sb.ToString();
+            }
+            catch { }
+            return Environment.UserName;
+        }
+    }
+
+    public static string? PicturePath
+    {
+        get
+        {
+            try
+            {
+                string? sid = WindowsIdentity.GetCurrent().User?.Value;
+                if (sid == null) return null;
+                string dir = Path.Combine(Environment.GetEnvironmentVariable("PUBLIC") ?? @"C:\Users\Public", "AccountPictures", sid);
+                if (!Directory.Exists(dir)) return null;
+                return Directory.EnumerateFiles(dir, "*Image96*").FirstOrDefault()
+                    ?? Directory.EnumerateFiles(dir, "*Image64*").FirstOrDefault()
+                    ?? Directory.EnumerateFiles(dir).FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
+            }
+            catch { return null; }
+        }
+    }
+}

@@ -1,0 +1,14 @@
+# build output
+bin/
+obj/
+out/
+publish/
+*.user
+*.suo
+.vs/
+.idea/
+*.swp
+
+# scratch
+Repo/Temp/*
+!Repo/Temp/.gitkeep

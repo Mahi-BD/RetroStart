@@ -1,0 +1,137 @@
+using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Interop;
+using Microsoft.Win32;
+using RetroStart.Core;
+using RetroStart.UI;
+
+namespace RetroStart;
+
+public partial class App : Application
+{
+    public static Settings Settings { get; private set; } = new();
+    public static AppCatalog Catalog { get; private set; } = null!;
+
+    private Mutex? _mutex;
+    private TrayIcon? _tray;
+    private StartHook? _hook;
+    private StartMenuWindow? _menu;
+    private SettingsWindow? _settingsWindow;
+
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        _mutex = new Mutex(true, "RetroStart.SingleInstance", out bool first);
+        if (!first) { Shutdown(); return; }
+
+        DispatcherUnhandledException += (_, ex) => { Log(ex.Exception); ex.Handled = true; };
+        AppDomain.CurrentDomain.UnhandledException += (_, ex) => Log(ex.ExceptionObject as Exception);
+
+        Settings = Store.Load("settings.json", JsonCtx.Default.Settings);
+        if (Settings.TileColumns is not (6 or 8)) Settings.TileColumns = 6;
+        Settings.MenuHeight = Math.Clamp(Settings.MenuHeight, 480, 1200);
+
+        Theme.Current.Start(Settings.Theme);
+        Catalog = new AppCatalog();
+        _menu = new StartMenuWindow();
+        Catalog.ScanAsync();
+
+        _hook = new StartHook();
+        _hook.Toggle += () => _menu.ToggleMenu();
+        _hook.Show += () => _menu.ShowMenu();
+        ApplyHookSettings();
+        _hook.Install();
+        TaskbarInfo.RefreshStartButtonAsync();
+
+        _tray = new TrayIcon("Retro Start");
+        _tray.LeftClick += () => _menu.ToggleMenu();
+        _tray.RightClick += ShowTrayMenu;
+
+        Autostart.Apply(Settings.StartWithWindows);
+        base.OnStartup(e);
+    }
+
+    /// <summary>Persist + push the current <see cref="Settings"/> into every subsystem.</summary>
+    public static void ApplySettings()
+    {
+        var app = (App)Current;
+        Store.Save("settings.json", Settings, JsonCtx.Default.Settings);
+        Theme.Current.SetMode(Settings.Theme);
+        app.ApplyHookSettings();
+        Autostart.Apply(Settings.StartWithWindows);
+        app._menu?.ApplySettings();
+    }
+
+    private void ApplyHookSettings()
+    {
+        if (_hook == null) return;
+        _hook.WinKeyEnabled = Settings.ReplaceWinKey;
+        _hook.StartButtonEnabled = Settings.ReplaceStartButton;
+        _hook.FallbackEnabled = Settings.ReplaceWinKey || Settings.ReplaceStartButton;
+    }
+
+    public void ShowSettings()
+    {
+        if (_settingsWindow is { IsLoaded: true }) { _settingsWindow.Activate(); return; }
+        _settingsWindow = new SettingsWindow();
+        _settingsWindow.Show();
+    }
+
+    private void ShowTrayMenu()
+    {
+        var cm = new ContextMenu { Placement = PlacementMode.MousePoint, Style = (Style)Resources["Win10ContextMenu"] };
+        cm.Items.Add(Item("Open Start menu", () => _menu?.ToggleMenu()));
+        cm.Items.Add(Item("Settings…", ShowSettings));
+        cm.Items.Add(Item("Refresh app list", () => Catalog.ScanAsync()));
+        cm.Items.Add(new Separator { Style = (Style)Resources["Win10Separator"] });
+        cm.Items.Add(Item("Exit Retro Start", Shutdown));
+        cm.IsOpen = true;
+        // A popup with no owning window would not dismiss on an outside click; give it the foreground.
+        if (PresentationSource.FromVisual(cm) is HwndSource src) Native.SetForegroundWindow(src.Handle);
+
+        MenuItem Item(string text, Action a)
+        {
+            var m = new MenuItem { Header = text, Style = (Style)Resources["Win10MenuItem"] };
+            m.Click += (_, _) => a();
+            return m;
+        }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _hook?.Dispose();      // Windows is back to normal the moment this runs
+        _tray?.Dispose();
+        _mutex?.Dispose();
+        base.OnExit(e);
+    }
+
+    public static void Log(Exception? ex)
+    {
+        if (ex == null) return;
+        try
+        {
+            Directory.CreateDirectory(Store.Dir);
+            File.AppendAllText(Path.Combine(Store.Dir, "error.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {ex}\n\n");
+        }
+        catch { }
+    }
+}
+
+/// <summary>Per-user autostart via HKCU\…\Run — the only registry key Retro Start ever writes.</summary>
+internal static class Autostart
+{
+    private const string Key = @"Software\Microsoft\Windows\CurrentVersion\Run";
+
+    public static void Apply(bool enabled)
+    {
+        try
+        {
+            using var k = Registry.CurrentUser.CreateSubKey(Key);
+            if (k == null) return;
+            if (enabled && Environment.ProcessPath is { } exe) k.SetValue("RetroStart", $"\"{exe}\"");
+            else k.DeleteValue("RetroStart", throwOnMissingValue: false);
+        }
+        catch { }
+    }
+}
