@@ -26,6 +26,8 @@ public sealed class Settings
     public bool TrimMemoryWhenHidden { get; set; } = true;
     /// <summary>Which shortcuts show in the left rail.</summary>
     public RailSettings Rail { get; set; } = new();
+    /// <summary>Custom account picture for the left rail; empty = use the Windows account picture.</summary>
+    public string ProfileImagePath { get; set; } = string.Empty;
 }
 
 /// <summary>Windows 10's "Choose which folders appear on Start", plus a calendar button.</summary>
@@ -57,12 +59,34 @@ public sealed class CustomItems
     public List<CustomItem> Items { get; set; } = new();
 }
 
-/// <summary>Calendar notes ("yyyy-MM-dd" → text) and the remembered window size. calendar.json.</summary>
+/// <summary>A colour-coded note category.</summary>
+public sealed class NoteCategory
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    /// <summary>"#RRGGBB".</summary>
+    public string Color { get; set; } = "#0078D4";
+}
+
+/// <summary>Calendar notes ("yyyy-MM-dd" → text), their categories, and the remembered window size.</summary>
 public sealed class CalendarData
 {
     public Dictionary<string, string> Notes { get; set; } = new();
+    /// <summary>"yyyy-MM-dd" → category id. Absent = the first category.</summary>
+    public Dictionary<string, string> NoteCategories { get; set; } = new();
+    public List<NoteCategory> Categories { get; set; } = new();
     public double Width { get; set; }
     public double Height { get; set; }
+
+    public static List<NoteCategory> DefaultCategories() => new()
+    {
+        new() { Id = "general",   Name = "General",   Color = "#0078D4" },
+        new() { Id = "work",      Name = "Work",      Color = "#8764B8" },
+        new() { Id = "personal",  Name = "Personal",  Color = "#107C10" },
+        new() { Id = "birthday",  Name = "Birthday",  Color = "#E3008C" },
+        new() { Id = "holiday",   Name = "Holiday",   Color = "#F7B500" },
+        new() { Id = "important", Name = "Important", Color = "#D13438" },
+    };
 }
 
 public sealed class Tile

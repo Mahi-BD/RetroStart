@@ -114,7 +114,18 @@ public static class UserInfo
         }
     }
 
+    /// <summary>The picture actually shown: a chosen one wins over the Windows account picture.</summary>
     public static string? PicturePath
+    {
+        get
+        {
+            string custom = App.Settings.ProfileImagePath;
+            return custom.Length > 0 && File.Exists(custom) ? custom : WindowsPicturePath;
+        }
+    }
+
+    /// <summary>The Windows account picture, ignoring any override.</summary>
+    public static string? WindowsPicturePath
     {
         get
         {

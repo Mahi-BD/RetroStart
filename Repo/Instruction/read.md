@@ -228,6 +228,26 @@ Fifth round — professional redesign + live tiles (verified live):
 - **New app icon** (`Repo/Script/make_icon.py`): a modern accent-gradient plate with four rounded
   white tiles and a soft shadow, rendered at 4× and downsampled; the `.ico` carries 16–256 px frames.
 
+Sixth round (verified live):
+- **Calendar stretches.** The month grids no longer sit in a `Viewbox` (which letterboxed a short, wide
+  window) — they fill the space and the `UniformGrid` day cells stretch, with the day numbers scaled
+  from the actual cell size (`ScaleDayText`).
+- **Clicking a day never navigates.** Selecting a day from the leading/trailing month used to re-centre
+  all three months; it now only selects. Use the arrows to change month.
+- **Note categories.** `CalendarData` gains `Categories` (id/name/#RRGGBB) and `NoteCategories`
+  (date → id); the note text stays in `Notes`, so existing files and JSON/ICS import-export are
+  unchanged. Day cells take their category colour, the note panel has a category picker, the footer a
+  legend, and **Categories…** opens `CategoryWindow` to add / rename / recolour / delete (deleting one
+  falls its days back to the first category).
+- **Live tile text no longer collides with the tile name**: the live panel reserves the name strip
+  (bottom margin), empty title/big parts collapse instead of reserving a line, the big value sits in a
+  `StretchDirection=DownOnly` Viewbox so a long time shrinks rather than being cut, and a gradient
+  scrim sits behind the name on photo faces.
+- **Settings fits without scrolling**: 980 px wide, two columns of cards, plus an **Account picture**
+  card (`Settings.ProfileImagePath`) to choose a custom picture or fall back to the Windows one.
+  `UserInfo.PicturePath` prefers the override, `UserInfo.WindowsPicturePath` ignores it, and the rail
+  reloads via `LoadUserPicture()` on save.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

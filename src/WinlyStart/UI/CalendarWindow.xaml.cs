@@ -21,13 +21,13 @@ public partial class CalendarWindow : Window
 {
     private readonly CalendarData _data;
     private readonly List<Button> _dayButtons = new();
+    private readonly List<UniformGrid> _dayGrids = new();
+    private bool _syncingCategory;
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(400) };
     private DateTime _month;      // first day of the middle month
     private DateTime _selected;
     private bool _loadingNote;
 
-    private static readonly Brush Amber = Frozen(Color.FromRgb(0xF7, 0xB5, 0x00));
-    private static readonly Brush AmberSoft = Frozen(Color.FromRgb(0xFF, 0xE9, 0xB0));
     private static Brush Accent => Frozen(Theme.Current.Accent);
     private static Brush Res(string key) => (Brush)Application.Current.Resources[key];
     private static Brush Grey => Res("Dlg.TextSecondary");
@@ -41,8 +41,10 @@ public partial class CalendarWindow : Window
         _data = Store.Load("calendar.json", JsonCtx.Default.CalendarData);
         if (_data.Width >= MinWidth && _data.Height >= MinHeight) { Width = _data.Width; Height = _data.Height; }
 
+        if (_data.Categories.Count == 0) _data.Categories = CalendarData.DefaultCategories();
         _selected = DateTime.Today;
         _month = new DateTime(_selected.Year, _selected.Month, 1);
+        RefreshCategoryLists();
         _saveTimer.Tick += (_, _) => { _saveTimer.Stop(); SaveNote(); };
 
         Render();
@@ -55,6 +57,7 @@ public partial class CalendarWindow : Window
     {
         MonthsHost.Children.Clear();
         _dayButtons.Clear();
+        _dayGrids.Clear();
         for (int i = -1; i <= 1; i++)
         {
             var panel = BuildMonth(_month.AddMonths(i), isCurrent: i == 0);
@@ -63,15 +66,27 @@ public partial class CalendarWindow : Window
         }
         HeaderText.Text = _month.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
         UpdateCount();
+        Dispatcher.BeginInvoke(ScaleDayText, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>Day numbers grow and shrink with the cells so a short, wide window still reads well.</summary>
+    private void ScaleDayText()
+    {
+        if (_dayGrids.Count == 0) return;
+        var g = _dayGrids[0];
+        if (g.ActualHeight <= 0 || g.ActualWidth <= 0) return;
+        double cell = Math.Min(g.ActualHeight / 6.0, g.ActualWidth / 7.0);
+        double size = Math.Clamp(cell * 0.42, 9, 26);
+        foreach (var b in _dayButtons) b.FontSize = size;
     }
 
     private Grid BuildMonth(DateTime first, bool isCurrent)
     {
         var fmt = CultureInfo.CurrentCulture.DateTimeFormat;
-        var panel = new Grid { Margin = new Thickness(10, 0, 10, 0) };
+        var panel = new Grid { Margin = new Thickness(6, 0, 6, 0) };
         panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        panel.RowDefinitions.Add(new RowDefinition());
+        panel.RowDefinitions.Add(new RowDefinition());          // days fill the rest
 
         var title = new TextBlock
         {
@@ -95,6 +110,7 @@ public partial class CalendarWindow : Window
         panel.Children.Add(dow);
 
         var days = new UniformGrid { Columns = 7, Rows = 6 };
+        _dayGrids.Add(days);
         int offset = ((int)first.DayOfWeek - (int)fmt.FirstDayOfWeek + 7) % 7;
         var start = first.AddDays(-offset);
         for (int i = 0; i < 42; i++)
@@ -123,11 +139,12 @@ public partial class CalendarWindow : Window
         bool selected = d == _selected;
         bool today = d == DateTime.Today;
 
-        b.Background = selected ? Accent : hasNote ? (inMonth ? Amber : AmberSoft) : CellBg;
-        b.Foreground = selected ? Brushes.White : hasNote ? Brushes.Black : inMonth ? CellText : Grey;
-        b.BorderBrush = today ? Accent : selected && hasNote ? Amber : Brushes.Transparent;
+        var cat = hasNote ? BrushFor(CategoryOf(d)) : null;
+        b.Background = selected ? Accent : cat ?? CellBg;
+        b.Foreground = selected ? Brushes.White : hasNote ? Brushes.White : inMonth ? CellText : Grey;
+        b.BorderBrush = today ? Accent : selected && cat != null ? cat : Brushes.Transparent;
         b.FontWeight = hasNote || today || selected ? FontWeights.SemiBold : FontWeights.Normal;
-        b.Opacity = inMonth || hasNote || selected ? 1 : 0.55;
+        b.Opacity = inMonth || hasNote || selected ? 1 : 0.45;
         b.ToolTip = hasNote ? _data.Notes[Key(d)] : null;
     }
 
@@ -150,12 +167,8 @@ public partial class CalendarWindow : Window
         if (sender is not Button { Tag: (DateTime d, bool) }) return;
         SaveNote();                        // flush the previous day's text first
         _selected = d;
-        if (d.Year != _month.Year || d.Month != _month.Month)
-        {
-            _month = new DateTime(d.Year, d.Month, 1);
-            Render();
-        }
-        else Restyle();
+        // Selecting a day from an adjacent month must NOT scroll the view — use the arrows for that.
+        Restyle();
         LoadNote();
     }
 
@@ -173,6 +186,74 @@ public partial class CalendarWindow : Window
 
     // ───────────────────────── notes ─────────────────────────
 
+    // ───────────────────────── categories ─────────────────────────
+
+    /// <summary>Row shown in the picker and the footer legend.</summary>
+    public sealed class CategoryVm
+    {
+        public required string Id { get; init; }
+        public required string Name { get; init; }
+        public required Brush Brush { get; init; }
+    }
+
+    private NoteCategory? CategoryOf(DateTime d)
+    {
+        string id = _data.NoteCategories.GetValueOrDefault(Key(d)) ?? string.Empty;
+        return _data.Categories.FirstOrDefault(c => c.Id == id) ?? _data.Categories.FirstOrDefault();
+    }
+
+    private static Brush BrushFor(NoteCategory? c)
+    {
+        try
+        {
+            if (c != null && ColorConverter.ConvertFromString(c.Color) is Color col) return Frozen(col);
+        }
+        catch { }
+        return Frozen(Color.FromRgb(0xF7, 0xB5, 0x00));
+    }
+
+    private void RefreshCategoryLists()
+    {
+        var rows = _data.Categories.Select(c => new CategoryVm { Id = c.Id, Name = c.Name, Brush = BrushFor(c) }).ToList();
+        _syncingCategory = true;
+        CategoryBox.ItemsSource = rows;
+        Legend.ItemsSource = rows;
+        _syncingCategory = false;
+        SyncCategoryPicker();
+    }
+
+    private void SyncCategoryPicker()
+    {
+        if (CategoryBox.ItemsSource is not IEnumerable<CategoryVm> rows) return;
+        string id = CategoryOf(_selected)?.Id ?? string.Empty;
+        _syncingCategory = true;
+        CategoryBox.SelectedItem = rows.FirstOrDefault(r => r.Id == id) ?? rows.FirstOrDefault();
+        _syncingCategory = false;
+    }
+
+    private void CategoryBox_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingCategory || CategoryBox.SelectedItem is not CategoryVm row) return;
+        _data.NoteCategories[Key(_selected)] = row.Id;
+        Persist();
+        Restyle();
+    }
+
+    private void Categories_Click(object sender, RoutedEventArgs e)
+    {
+        var w = new CategoryWindow(_data) { Owner = this };
+        if (w.ShowDialog() != true) return;
+        // a deleted category leaves its days pointing at nothing → they fall back to the first one
+        var ids = _data.Categories.Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var k in _data.NoteCategories.Where(kv => !ids.Contains(kv.Value)).Select(kv => kv.Key).ToList())
+            _data.NoteCategories.Remove(k);
+        Persist();
+        RefreshCategoryLists();
+        Restyle();
+    }
+
+    // ───────────────────────── notes ─────────────────────────
+
     private static string Key(DateTime d) => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
     private bool HasNote(DateTime d) => _data.Notes.TryGetValue(Key(d), out var t) && !string.IsNullOrWhiteSpace(t);
 
@@ -183,6 +264,7 @@ public partial class CalendarWindow : Window
         NoteTitle.Text = "Note for " + _selected.ToString("dddd, d MMMM yyyy", CultureInfo.CurrentCulture);
         SavedText.Text = "Saved automatically";
         _loadingNote = false;
+        SyncCategoryPicker();
     }
 
     private void NoteBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -198,11 +280,13 @@ public partial class CalendarWindow : Window
         _saveTimer.Stop();
         string key = Key(_selected), text = NoteBox.Text.Trim();
         bool had = _data.Notes.ContainsKey(key);
-        if (text.Length == 0) { if (!had) return; _data.Notes.Remove(key); }
+        if (text.Length == 0) { if (!had) return; _data.Notes.Remove(key); _data.NoteCategories.Remove(key); }
         else
         {
             if (had && _data.Notes[key] == text) return;
             _data.Notes[key] = text;
+            if (!_data.NoteCategories.ContainsKey(key) && CategoryBox.SelectedItem is CategoryVm row)
+                _data.NoteCategories[key] = row.Id;
         }
         Persist();
         Restyle();
@@ -334,6 +418,7 @@ public partial class CalendarWindow : Window
         if (!IsLoaded || WindowState != WindowState.Normal) return;
         _data.Width = Width;
         _data.Height = Height;
+        ScaleDayText();
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

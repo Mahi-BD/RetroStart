@@ -43,25 +43,7 @@ public partial class StartMenuWindow : Window
         Native.SetWindowLongW(_hwnd, Native.GWL_EXSTYLE, Native.GetWindowLongW(_hwnd, Native.GWL_EXSTYLE) | Native.WS_EX_TOOLWINDOW);
         IconLoader.SetDpiScale(VisualTreeHelper.GetDpi(this).DpiScaleX);
 
-        UserNameText.Text = UserInfo.DisplayName;
-        UserButton.ToolTip = UserNameText.Text;
-        if (UserInfo.PicturePath is { } pic)
-        {
-            try
-            {
-                var b = new BitmapImage();
-                b.BeginInit();
-                b.UriSource = new Uri(pic);
-                b.DecodePixelWidth = 64;
-                b.CacheOption = BitmapCacheOption.OnLoad;
-                b.EndInit();
-                b.Freeze();
-                UserPictureBrush.ImageSource = b;
-                UserPicture.Visibility = Visibility.Visible;
-                UserGlyph.Visibility = Visibility.Collapsed;
-            }
-            catch { }
-        }
+        LoadUserPicture();
 
         App.Catalog.Changed += OnCatalogChanged;
         Theme.Current.Changed += ApplyBackdrop;
@@ -69,6 +51,30 @@ public partial class StartMenuWindow : Window
         ApplyBackdrop();
         BuildRail();
         ApplySettings();
+    }
+
+    /// <summary>Fills the rail's user button from the chosen (or Windows) account picture.</summary>
+    private void LoadUserPicture()
+    {
+        UserNameText.Text = UserInfo.DisplayName;
+        UserButton.ToolTip = UserNameText.Text;
+        UserPicture.Visibility = Visibility.Collapsed;
+        UserGlyph.Visibility = Visibility.Visible;
+        if (UserInfo.PicturePath is not { } pic) return;
+        try
+        {
+            var b = new BitmapImage();
+            b.BeginInit();
+            b.UriSource = new Uri(pic);
+            b.DecodePixelWidth = 64;
+            b.CacheOption = BitmapCacheOption.OnLoad;
+            b.EndInit();
+            b.Freeze();
+            UserPictureBrush.ImageSource = b;
+            UserPicture.Visibility = Visibility.Visible;
+            UserGlyph.Visibility = Visibility.Collapsed;
+        }
+        catch { }
     }
 
     // ───────────────────────── show / hide ─────────────────────────
@@ -209,6 +215,7 @@ public partial class StartMenuWindow : Window
         Width = WidthForColumns(s.TileColumns);
         foreach (var g in _groups) { g.Columns = s.TileColumns; g.Pack(); }
         BuildRail();
+        LoadUserPicture();
         RebuildRows();
     }
 
@@ -924,7 +931,7 @@ public partial class StartMenuWindow : Window
                 break;
             case LiveKind.Clock:
                 var (cb, cs) = LiveTiles.ClockFace(now);
-                t.LiveTitle = "Clock"; t.LiveBig = cb; t.LiveSub = cs; t.LiveImage = null;
+                t.LiveTitle = string.Empty; t.LiveBig = cb; t.LiveSub = cs; t.LiveImage = null;
                 break;
             case LiveKind.Photos:
                 if (!newPhoto && t.LiveImage != null) break;
@@ -932,7 +939,7 @@ public partial class StartMenuWindow : Window
                 Task.Run(() => LiveTiles.NextPhoto(width)).ContinueWith(task => Dispatcher.BeginInvoke(() =>
                 {
                     if (task.Result is { } img) t.LiveImage = img;
-                    else { t.LiveTitle = "Photos"; t.LiveBig = string.Empty; t.LiveSub = "No pictures in your Pictures folder"; t.LiveImage = null; }
+                    else { t.LiveTitle = string.Empty; t.LiveBig = string.Empty; t.LiveSub = "No pictures in your Pictures folder"; t.LiveImage = null; }
                 }));
                 break;
         }

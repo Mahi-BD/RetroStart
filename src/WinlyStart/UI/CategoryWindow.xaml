@@ -1,0 +1,110 @@
+<Window x:Class="WinlyStart.UI.CategoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Categories" Width="560" Height="480" MinWidth="480" MinHeight="380"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True"
+        Background="{DynamicResource Dlg.Bg}" Foreground="{DynamicResource Dlg.Text}">
+    <Window.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource DlgButton}"/>
+        <Style TargetType="TextBox" BasedOn="{StaticResource DlgTextBox}"/>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource DlgBody}"/>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Note categories" Style="{StaticResource DlgH1}" FontSize="20"/>
+            <TextBlock Text="Each category colours the days that use it." Style="{StaticResource DlgCaption}"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource DlgCard}" Padding="6" Margin="0,0,0,12">
+            <ListBox x:Name="List" Background="Transparent" BorderThickness="0"
+                     SelectionChanged="List_SelectionChanged" FocusVisualStyle="{x:Null}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="8,7"/>
+                        <Setter Property="Foreground" Value="{DynamicResource Dlg.Text}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Dlg.Hover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Dlg.Hover}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="18" Height="18" CornerRadius="4" Margin="0,0,10,0" Background="{Binding Brush}"/>
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- editor -->
+        <Border Grid.Row="2" Style="{StaticResource DlgCard}" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock x:Name="EditorTitle" Text="Edit category" Style="{StaticResource DlgH2}"/>
+                <DockPanel Margin="0,0,0,10">
+                    <TextBlock DockPanel.Dock="Left" Text="Name" Width="60" VerticalAlignment="Center"/>
+                    <TextBox x:Name="NameBox" MaxLength="40"/>
+                </DockPanel>
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="Colour" Width="60" VerticalAlignment="Center"/>
+                    <ItemsControl x:Name="Swatches">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="28" Height="28" Margin="0,0,6,6" Tag="{Binding Hex}" Click="Swatch_Click"
+                                        ToolTip="{Binding Hex}" MinWidth="0" Padding="0" BorderThickness="0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{Binding Brush}" CornerRadius="5"
+                                                    BorderBrush="{DynamicResource Dlg.Text}" BorderThickness="{Binding Ring}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <DockPanel Grid.Row="3">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                <Button Content="Add" MinWidth="80" Margin="0,0,8,0" Click="Add_Click"/>
+                <Button x:Name="DeleteButton" Content="Delete" MinWidth="80" Click="Delete_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Margin="0,0,10,0" IsCancel="True"/>
+                <Button Content="Save" Style="{StaticResource DlgPrimaryButton}" IsDefault="True" Click="Save_Click"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

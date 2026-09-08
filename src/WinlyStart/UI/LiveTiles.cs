@@ -36,7 +36,7 @@ internal static class LiveTiles
     }
 
     public static (string big, string sub) ClockFace(DateTime now) =>
-        (now.ToString("t", CultureInfo.CurrentCulture), now.ToString("dddd, d MMMM", CultureInfo.CurrentCulture));
+        (now.ToString("t", CultureInfo.CurrentCulture), now.ToString("ddd, d MMM", CultureInfo.CurrentCulture));
 
     /// <summary>Next picture from the user's Pictures folder (top level + one level down), decoded small and cached.</summary>
     private static readonly object _photoLock = new();

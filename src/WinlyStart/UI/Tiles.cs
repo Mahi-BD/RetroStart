@@ -48,7 +48,7 @@ public sealed class TileVm : INotifyPropertyChanged
     public string LiveSub { get => _liveSub; set { _liveSub = value; Raise(nameof(LiveSub)); } }
     public BitmapSource? LiveImage { get => _liveImage; set { _liveImage = value; Raise(nameof(LiveImage)); Raise(nameof(LiveHasImage)); } }
     public bool LiveHasImage => _liveImage != null;
-    public double LiveBigSize => _size == TileSize.Large ? 64 : 38;
+    public double LiveBigSize => _size switch { TileSize.Large => 60, TileSize.Wide => 38, _ => 22 };
     /// <summary>Stable per-tile phase so live tiles don't all flip in lock-step.</summary>
     public int LivePhase => Math.Abs(App.Id.GetHashCode() % 5);
 

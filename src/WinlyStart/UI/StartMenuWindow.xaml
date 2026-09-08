@@ -150,15 +150,54 @@
                         </Grid.RenderTransform>
                         <Image Source="{Binding LiveImage}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"
                                Visibility="{Binding LiveHasImage, Converter={StaticResource BoolToVis}}"/>
-                        <StackPanel Margin="10,7,10,0" VerticalAlignment="Top"
+                        <!-- bottom margin reserves the strip the tile name sits in, so the two never collide -->
+                        <StackPanel Margin="10,7,10,26" VerticalAlignment="Top"
                                     Visibility="{Binding LiveHasImage, Converter={StaticResource BoolToVisInverse}}">
-                            <TextBlock Text="{Binding LiveTitle}" FontSize="12" Foreground="{DynamicResource Rs.AccentText}" Opacity="0.9"/>
-                            <TextBlock Text="{Binding LiveBig}" FontSize="{Binding LiveBigSize}" FontWeight="Light" Margin="0,-3,0,0"
-                                       Foreground="{DynamicResource Rs.AccentText}"/>
+                            <!-- empty parts collapse so they don't reserve a line and push the rest into the name -->
+                            <TextBlock Text="{Binding LiveTitle}" FontSize="12" Foreground="{DynamicResource Rs.AccentText}" Opacity="0.9"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LiveTitle}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <!-- DownOnly viewbox: long times/dates shrink to fit instead of being cut off -->
+                            <Viewbox StretchDirection="DownOnly" Stretch="Uniform" HorizontalAlignment="Left"
+                                     MaxHeight="{Binding LiveBigSize}" Margin="0,-2,0,0">
+                                <Viewbox.Style>
+                                    <Style TargetType="Viewbox">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LiveBig}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Viewbox.Style>
+                                <TextBlock Text="{Binding LiveBig}" FontSize="{Binding LiveBigSize}" FontWeight="Light"
+                                           Foreground="{DynamicResource Rs.AccentText}"/>
+                            </Viewbox>
                             <TextBlock Text="{Binding LiveSub}" FontSize="11" Foreground="{DynamicResource Rs.AccentText}" Opacity="0.9"
-                                       TextTrimming="CharacterEllipsis" TextWrapping="Wrap" MaxHeight="30"/>
+                                       TextTrimming="CharacterEllipsis" TextWrapping="Wrap" MaxHeight="28" Margin="0,2,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding LiveSub}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </Grid>
+                    <Border Height="26" VerticalAlignment="Bottom" IsHitTestVisible="False"
+                            Visibility="{Binding LiveHasImage, Converter={StaticResource BoolToVis}}">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#00000000" Offset="0"/>
+                                <GradientStop Color="#99000000" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
                     <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource Rs.AccentText}" Margin="8,0,8,6"
                                HorizontalAlignment="Left" VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"
                                Visibility="{Binding ShowLabel, Converter={StaticResource BoolToVis}}"/>
