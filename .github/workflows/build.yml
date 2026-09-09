@@ -7,6 +7,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# creating a release needs write access to repository contents
+permissions:
+  contents: write
+
 env:
   APP_VERSION: 1.4.0
 
