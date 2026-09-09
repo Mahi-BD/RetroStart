@@ -132,8 +132,15 @@ jobs:
           $v = [version]$env:APP_VERSION
           $appxVersion = '{0}.{1}.{2}.0' -f $v.Major, $v.Minor, $v.Build
           $manifest = Get-Content packaging/AppxManifest.xml -Raw
-          $manifest = $manifest -replace 'Version="[\d\.]+"', "Version=`"$appxVersion`""
+          # Anchor to the <Identity> element. A bare Version="..." pattern also matches the
+          # version="1.0" of the XML declaration on line 1 - PowerShell's -replace is
+          # case-insensitive - which makes the manifest unparseable:
+          #   "Line 1, Column 14, Reason: Incorrect xml declaration syntax."
+          $manifest = $manifest -replace '(<Identity[\s\S]*?Version=")[\d\.]+(")', "`${1}$appxVersion`${2}"
           Set-Content (Join-Path $payload 'AppxManifest.xml') $manifest -Encoding UTF8
+          if ((Get-Content (Join-Path $payload 'AppxManifest.xml') -TotalCount 1) -notmatch '<\?xml version="1\.0"') {
+            throw 'the XML declaration was corrupted by the version substitution'
+          }
 
           Get-ChildItem $payload -Filter *.pdb -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 

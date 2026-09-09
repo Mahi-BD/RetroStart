@@ -61,9 +61,16 @@ Copy-Item (Join-Path $PSScriptRoot 'Assets') $payload -Recurse -Force
 $v = [version]$Version
 $appxVersion = '{0}.{1}.{2}.0' -f $v.Major, $v.Minor, $v.Build
 $manifest = Get-Content (Join-Path $PSScriptRoot 'AppxManifest.xml') -Raw
-$manifest = $manifest -replace 'Version="[\d\.]+"', "Version=`"$appxVersion`""
-$manifest = $manifest -replace 'Publisher="CN=[^"]+"', "Publisher=`"$Publisher`""
+# Both substitutions are anchored to the <Identity> element on purpose. A bare Version="..."
+# pattern also matches the version="1.0" of the XML declaration on line 1 - PowerShell's -replace
+# is case-insensitive - and makeappx then rejects the manifest with
+# "Line 1, Column 14, Reason: Incorrect xml declaration syntax."
+$manifest = $manifest -replace '(<Identity[\s\S]*?Version=")[\d\.]+(")', "`${1}$appxVersion`${2}"
+$manifest = $manifest -replace '(<Identity[\s\S]*?Publisher=")[^"]+(")', "`${1}$Publisher`${2}"
 Set-Content (Join-Path $payload 'AppxManifest.xml') $manifest -Encoding UTF8
+if ((Get-Content (Join-Path $payload 'AppxManifest.xml') -TotalCount 1) -notmatch '<\?xml version="1\.0"') {
+    throw 'the XML declaration was corrupted by the version substitution'
+}
 
 # The publish drops a .pdb and the deps/runtimeconfig files next to the single-file exe; MSIX
 # rejects nothing here, but shipping them just inflates the package.
