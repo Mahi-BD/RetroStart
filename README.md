@@ -129,6 +129,12 @@ Developer notes, architecture and the project rules are in
 * While an **elevated** window has focus, the Windows key is handled by the fallback path
   (brief flicker of the Windows 11 menu). Winly Start deliberately does not run elevated.
 
+## Privacy
+
+Winly Start collects nothing — no telemetry, no analytics, no accounts. Everything stays in
+`%LocalAppData%\WinlyStart`. The only network requests it ever makes are to a website you add as a
+tile, to read that site's icon and preview image. See [the privacy policy](docs/privacy-policy.md).
+
 ## Contributing
 
 Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The two rules
