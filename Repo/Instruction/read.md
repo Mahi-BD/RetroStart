@@ -309,6 +309,27 @@ Tenth round — v1.5.1 (verified live):
   Verified all three directions: up into an earlier group, down into a later one, and into an **empty**
   group (the case that stayed broken after the first fix).
 
+Microsoft Store submission (2026-09-09):
+- Product **Winly Start** reserved in Partner Center as an **EXE or MSI app** (unpackaged Win32).
+  MSIX was rejected on purpose: a packaged app cannot install the low-level hooks the whole product
+  depends on. Product id `f0f7a659-0dc8-4389-919f-e55d8daaed01`.
+- ⚠️ **The GitHub release URL cannot be the Store package URL.**
+  `github.com/.../releases/download/...` answers **302** with a signed, expiring
+  `release-assets.githubusercontent.com` link, and Partner Center refuses it:
+  *"The package URL redirects to another URL. Provide a download URL without redirection."*
+  The installer is therefore mirrored on GitHub Pages, which serves it **200, no redirect**:
+  <https://mahi-bd.github.io/WinlyStart-downloads/WinlyStart-Setup-1.5.1.exe>
+  (repo `Mahi-BD/WinlyStart-downloads` — deliberately separate so 50 MB binaries never enter this
+  repo's history). **Every release must be copied there and the Store package URL bumped**, or the
+  Store keeps shipping the old build.
+- Store logos are generated, not photographed: `docs/store/logos/` holds a 1080x1080 box art and a
+  720x1080 poster. Partner Center rejects anything smaller, so the mark is *redrawn* at that size by
+  the generator rather than upscaled from the 256 px icon.
+- Age rating came back **ESRB Everyone / IARC 3+** from the IARC questionnaire (All Other App Types,
+  "no" to every content question).
+- The certification notes spell out the two user-mode hooks up front - a tester who finds
+  `WH_KEYBOARD_LL` without that context is likely to flag the app.
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.
