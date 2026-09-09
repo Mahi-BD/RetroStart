@@ -160,27 +160,74 @@ start menu, windows 10 start, live tiles, start menu replacement, classic start,
 **Applicable license terms** — the full MIT licence text, plus the source URL and the
 "not affiliated with Microsoft" disclaimer.
 
-## Submitted
+## Submitted, then rejected — 10.2.9 (code signing)
 
-Submitted **2026-09-09**. Status **In review** (Microsoft's SLA is 3 business days).
-All five sections green: Availability, Properties, Age ratings, Packages, Store listing.
-Store ID and the Store deep link only appear once the app goes live.
+Submitted **2026-09-09**; certification **failed the same day**.
+
+> **10.2.9 Security - Package Submissions**
+> The binary and all of its Portable Executable (PE) files ... must be digitally signed with a code
+> sign certificate that chains up to a certificate issued by a Certificate Authority (CA) that is
+> part of the Microsoft Trusted Root Program.
+>
+> | Package URL | Code signing type | Description |
+> |---|---|---|
+> | `…/WinlyStart-downloads/WinlyStart-Setup-1.5.1.exe` | **Unsigned** | Package should be signed with SHA256 or higher algorithm |
+
+Everything else passed. The five setup sections stayed green and no other policy was raised — this is
+the only blocker.
+
+⚠️ **Do not trust the pre-flight "Code sign check".** It reported *"Your app has a valid code sign"*
+for this exact package. Certification then classified the same file as **Unsigned**. The pre-flight
+check is not a signing check you can rely on; assume unsigned means rejected.
+
+### The fix
+
+`.github/workflows/build.yml` now signs, and verifies, every PE file it ships:
+
+1. `out/fdd/WinlyStart.exe` and `out/sc/WinlyStart.exe` are signed **before** ISCC runs, because the
+   installer embeds the self-contained exe — signing afterwards would leave the payload unsigned.
+2. The installer in `dist/` is signed after it is built; it is the file the Store actually downloads.
+3. `signtool verify /pa` fails the build if any of them is unsigned.
+
+Signing uses `/fd SHA256` with a SHA256 RFC-3161 timestamp, so the signature keeps validating after
+the certificate expires.
+
+It is driven by two repository secrets, and the build still succeeds without them (emitting a warning
+and unsigned artifacts) so forks and pull requests keep working:
+
+| Secret | Value |
+|---|---|
+| `CODESIGN_PFX_BASE64` | the `.pfx`, base64-encoded |
+| `CODESIGN_PFX_PASSWORD` | its password |
+
+**A certificate is still required** — the workflow cannot invent one. It must chain to a CA in the
+Microsoft Trusted Root Program; a self-signed certificate will not pass. Options:
+
+* **SignPath Foundation** — free code signing for open-source projects. Fits this project (public
+  repo, GitHub Actions build), but needs an application and approval.
+* **Azure Trusted Signing** — Microsoft's own service, the one the rejection links to. Around
+  $10/month plus identity validation.
+* **A commercial OV certificate** — roughly $100-400/year, usually on a hardware token or cloud HSM.
+* **Repackage as MSIX** — the Store code-signs MSIX for free, but ⚠️ *"you have to delete your app
+  name from existing Win32 app in Partner Center"* to reuse the name, and the packaged app would need
+  the `HKCU\…\Run` startup replaced with a `windows.startupTask` extension. Whether the low-level
+  hooks survive MSIX packaging is **unverified** — a full-trust packaged app should keep them, but
+  that has not been tested.
 
 ### Package validation result (package 28995904, x64)
 
 | Check | Result |
 |---|---|
-| Malware check | **Passed** — "The package is found to be clean." |
-| Code sign check | **Passed** — "Your app has a valid code sign." |
+| Malware check | Passed — "The package is found to be clean." |
+| Code sign check | Passed — ⚠️ **contradicted by certification, which found it unsigned** |
 | Silent install check | Unknown — "We could not identify if your app is installing silently." |
 | Entry in add or remove programs | Unknown — could not identify the app and publisher name |
 | Bundleware check | Unknown — same reason |
 
 The three "unknown" results are the expected shape of a **per-user** Inno Setup install: the
 validation sandbox looks for a machine-wide Add/Remove Programs entry, and Winly Start writes its
-uninstall entry under `HKCU` instead. They are not failures, but they are the most likely thing a
-certification tester asks about — the certification notes already explain the per-user install.
+uninstall entry under `HKCU` instead.
 
-⚠️ The run takes far longer than the "approximately 30 mins" the page claims, and **the page does not
-refresh itself**: it showed both checks spinning for over an hour, and a hard reload after submitting
-revealed both had actually passed. Reload before concluding a run is stuck.
+⚠️ The validation page does not refresh itself and its "approximately 30 mins" is optimistic: it
+showed two checks spinning for over an hour when both had already finished. Reload before concluding
+a run is stuck.

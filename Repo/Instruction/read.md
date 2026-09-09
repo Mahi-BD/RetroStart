@@ -336,9 +336,18 @@ Microsoft Store submission (2026-09-09):
 - ⚠️ **Package validation lies about being stuck.** The page claims ~30 minutes, does not refresh
   itself, and showed Malware + Code sign spinning for over an hour. A hard reload after submitting
   showed both had **passed** long before. Reload before assuming a run has wedged.
-- **Submitted 2026-09-09, status "In review"** (3 business-day SLA). Malware and Code sign passed;
-  silent-install / add-remove / bundleware came back *unknown* because the sandbox looks for a
-  machine-wide uninstall entry and this is a per-user install.
+- **Submitted 2026-09-09 - and REJECTED the same day under policy 10.2.9 (Package Submissions):**
+  the installer is **unsigned**. Every PE file must be signed with a certificate chaining to a CA in
+  the Microsoft Trusted Root Program, SHA256 or higher. Nothing else was raised.
+- ⚠️ **The pre-flight "Code sign check" is not trustworthy.** It reported *"Your app has a valid code
+  sign"* for the exact package certification then classified as **Unsigned**. Do not read that check
+  as evidence the binary is signed.
+- CI now signs `out/fdd/WinlyStart.exe` and `out/sc/WinlyStart.exe` **before** ISCC (the installer
+  embeds the self-contained exe, so signing after would ship an unsigned payload), signs the
+  installer afterwards, and fails the build on `signtool verify /pa`. Driven by the repository
+  secrets `CODESIGN_PFX_BASE64` / `CODESIGN_PFX_PASSWORD`; without them the build still succeeds and
+  warns, so forks and PRs keep working. **A real certificate is still needed** - self-signed will not
+  pass. See `docs/microsoft-store.md` for the options.
 
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The

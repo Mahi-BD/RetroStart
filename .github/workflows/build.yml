@@ -32,6 +32,54 @@ jobs:
       - name: Publish (self-contained)
         run: dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out/sc
 
+      # Microsoft Store policy 10.2.9 rejects an unsigned package: "the binary and all of its
+      # Portable Executable (PE) files ... must be digitally signed with a code sign certificate
+      # that chains up to a certificate issued by a Certificate Authority (CA) that is part of the
+      # Microsoft Trusted Root Program". So both published exes are signed BEFORE the installer is
+      # built (the installer embeds one of them), and the installer itself is signed after.
+      #
+      # Set up two repository secrets to turn this on:
+      #   CODESIGN_PFX_BASE64  - the .pfx, base64-encoded:
+      #                          base64 -w0 cert.pfx        (Linux/macOS)
+      #                          [Convert]::ToBase64String([IO.File]::ReadAllBytes('cert.pfx'))
+      #   CODESIGN_PFX_PASSWORD - its password
+      # Without them the build still succeeds and simply produces unsigned artifacts, so forks and
+      # pull requests keep working.
+      - name: Sign application binaries
+        id: sign_app
+        shell: pwsh
+        env:
+          PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
+          PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+        run: |
+          if (-not $env:PFX_BASE64) {
+            Write-Host "::warning::No CODESIGN_PFX_BASE64 secret - artifacts will be UNSIGNED and will fail Microsoft Store policy 10.2.9."
+            "signed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            exit 0
+          }
+
+          $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:PFX_BASE64))
+
+          # Newest signtool.exe from the installed Windows SDKs.
+          $signtool = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -like '*\x64\*' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1 -ExpandProperty FullName
+          if (-not $signtool) { throw "signtool.exe not found" }
+          Write-Host "Using $signtool"
+          "signtool=$signtool" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+          # SHA256 digest and a SHA256 RFC-3161 timestamp: the report asks for
+          # "SHA256 or higher", and an expired certificate keeps validating once timestamped.
+          & $signtool sign /f $pfx /p $env:PFX_PASSWORD `
+            /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+            /d "Winly Start" /du "https://github.com/Mahi-BD/WinlyStart" `
+            out\fdd\WinlyStart.exe out\sc\WinlyStart.exe
+          if ($LASTEXITCODE -ne 0) { throw "signtool failed on the application binaries" }
+
+          "signed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Build installer
         run: |
           choco install innosetup -y --no-progress
@@ -40,6 +88,32 @@ jobs:
             "/DSourceExe=..\out\sc\WinlyStart.exe" `
             installer\WinlyStart.iss
           Get-ChildItem dist
+
+      # The installer is a PE file too, and it is the file whose URL the Store downloads,
+      # so it has to carry its own signature.
+      - name: Sign installer
+        if: steps.sign_app.outputs.signed == 'true'
+        shell: pwsh
+        env:
+          PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+          & '${{ steps.sign_app.outputs.signtool }}' sign /f $pfx /p $env:PFX_PASSWORD `
+            /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 `
+            /d "Winly Start Setup" /du "https://github.com/Mahi-BD/WinlyStart" `
+            (Get-ChildItem dist\*.exe | ForEach-Object FullName)
+          if ($LASTEXITCODE -ne 0) { throw "signtool failed on the installer" }
+
+      - name: Verify signatures
+        if: steps.sign_app.outputs.signed == 'true'
+        shell: pwsh
+        run: |
+          $files = @('out\fdd\WinlyStart.exe', 'out\sc\WinlyStart.exe') +
+                   (Get-ChildItem dist\*.exe | ForEach-Object FullName)
+          foreach ($f in $files) {
+            & '${{ steps.sign_app.outputs.signtool }}' verify /pa /v $f
+            if ($LASTEXITCODE -ne 0) { throw "signature verification failed for $f" }
+          }
 
       - name: Zip portable builds
         shell: pwsh
