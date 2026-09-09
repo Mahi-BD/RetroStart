@@ -7,6 +7,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  APP_VERSION: 1.4.0
+
 jobs:
   build:
     runs-on: windows-latest
@@ -25,7 +28,16 @@ jobs:
       - name: Publish (self-contained)
         run: dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o out/sc
 
-      - name: Zip
+      - name: Build installer
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            "/DAppVersion=$env:APP_VERSION" `
+            "/DSourceExe=..\out\sc\WinlyStart.exe" `
+            installer\WinlyStart.iss
+          Get-ChildItem dist
+
+      - name: Zip portable builds
         shell: pwsh
         run: |
           Compress-Archive -Path out/fdd/* -DestinationPath WinlyStart-win-x64.zip
@@ -35,6 +47,7 @@ jobs:
         with:
           name: WinlyStart
           path: |
+            dist/*.exe
             WinlyStart-win-x64.zip
             WinlyStart-win-x64-selfcontained.zip
 
@@ -43,6 +56,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/*.exe
             WinlyStart-win-x64.zip
             WinlyStart-win-x64-selfcontained.zip
           generate_release_notes: true

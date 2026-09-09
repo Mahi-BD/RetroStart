@@ -12,3 +12,4 @@ publish/
 # scratch
 Repo/Temp/*
 !Repo/Temp/.gitkeep
+dist/

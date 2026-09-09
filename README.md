@@ -1,6 +1,7 @@
 # Winly Start
 
 [![build](https://github.com/Mahi-BD/WinlyStart/actions/workflows/build.yml/badge.svg)](https://github.com/Mahi-BD/WinlyStart/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/Mahi-BD/WinlyStart?display_name=tag&sort=semver)](https://github.com/Mahi-BD/WinlyStart/releases/latest)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
 
@@ -8,52 +9,74 @@
 
 Winly Start is a small, open-source (MIT) .NET 8 app that brings the Windows 10 Start menu
 experience to Windows 11 — the left rail, the A–Z app list with folders and the alphabet
-jump grid, and the tile board — while following your Windows 11 theme (light/dark, accent
-colour, transparency) and keeping the Windows 10 *look*: acrylic blur, square corners, the
-slide-up animation, tile hover and press effects.
+jump grid, live tiles and the tile board — while following your Windows 11 theme (light/dark,
+accent colour, transparency) and keeping the Windows 10 *look*.
 
 It **replaces** the Windows 11 Start menu in everyday use: the Start button, the Windows
 key and Ctrl+Esc all open Winly Start. It does this without touching Windows itself — quit
 the app and Windows 11 is exactly as it was.
 
-> Status: **v0.1 — early preview.** Verified running on Windows 11 Pro (build 26200): the Windows
-> key and Start button open it (and suppress the Windows 11 menu), search and app-launching work,
-> and it follows the system theme. Still young software — please open issues with your Windows build
-> number and what you saw. Known rough edge: the acrylic renders as a solid tint on current Windows 11
-> builds (real blur is on the roadmap).
-
-## Features
-
-| Windows 10 feature | Winly Start |
-|---|---|
-| Left rail: hamburger, user, Documents, Pictures, Settings, Power | ✅ with the expandable labelled rail |
-| Power flyout: Sleep / Shut down / Restart · User flyout: account settings / Lock / Sign out | ✅ |
-| "Recently added" (with Expand) and "Most used" | ✅ |
-| A–Z list with letter headers, Start-menu folders that expand inline | ✅ |
-| Alphabet jump grid (click a letter header) | ✅ |
-| Type to search the app list, Enter launches | ✅ |
-| Right-click: Pin/Unpin, Run as administrator, Open file location, Uninstall | ✅ |
-| Tiles: Small / Medium / Wide / Large, groups with editable names, drag to rearrange | ✅ |
-| Packaged (Store) apps with their coloured tile logos | ✅ |
-| Acrylic blur, accent colour on Start, transparency on/off — follows Windows 11 settings | ✅ live |
-| Live tiles | ✅ Winly Start's own for Calendar, Clock and Photos (Windows 11 has no live-tile platform) |
-
-Beyond Windows 10: right-click empty board space to **add any program, file, shortcut or website** as a
-tile (websites use the site's favicon as their icon and its own preview image as a live tile), drag group headers to **reorder groups**, drag the corner grip to **resize** the menu, and turn on
-a **Calendar** button (plus Documents/Downloads/Music/Videos/Network/… ) for the left rail in Settings.
-The calendar shows three months, scales with its (remembered) window size, keeps a note per day
-(amber = has a note), and imports/exports all notes as JSON or iCalendar `.ics`.
+![The Winly Start menu](docs/screenshots/menu.png)
 
 ## Install
 
-1. Download the latest zip from **Releases** (`WinlyStart-win-x64.zip` needs the
-   [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0);
-   `WinlyStart-win-x64-selfcontained.zip` needs nothing).
-2. Unzip anywhere and run `WinlyStart.exe`. A tray icon appears; press the Windows key.
-3. Right-click the tray icon → **Settings…** to enable *Start with Windows*.
+Download from the [latest release](https://github.com/Mahi-BD/WinlyStart/releases/latest):
 
-Nothing is installed system-wide. To uninstall: tray icon → **Exit Winly Start**, delete the
-folder, and optionally delete `%LocalAppData%\WinlyStart` (your tile layout and settings).
+| Download | What it is |
+|---|---|
+| **`WinlyStart-Setup-x.y.z.exe`** | **Recommended.** Per-user installer — no administrator rights, nothing needed on the machine. Adds Start-menu and optional desktop shortcuts, and can start Winly Start when you sign in. |
+| `WinlyStart-win-x64-selfcontained.zip` | Portable single .exe. Needs nothing installed. |
+| `WinlyStart-win-x64.zip` | Portable single .exe, needs the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). |
+
+After installing, a tray icon appears — press the Windows key. Right-click the tray icon for
+**Settings…**. To uninstall: Windows Settings → Apps, or tray icon → **Exit** and delete the
+folder. Your tiles and settings live in `%LocalAppData%\WinlyStart` and are left in place.
+
+## Features
+
+### The menu
+The familiar Windows 10 layout: a left rail, "Recently added" and "Most used", the A–Z list
+with expandable Start-menu folders, and a tile board with groups.
+
+Type anywhere to search; press Enter to launch the first match.
+
+![Type to search](docs/screenshots/search.png)
+
+### Live tiles
+Windows 11 removed the live-tile platform, so Winly Start provides its own faces for the
+things it has real data for: a **Calendar** tile showing your next note, a **Clock** tile,
+a **Photos** slideshow from your Pictures folder, and **website tiles that show the site's
+own preview image**. Each tile has a *Turn Live Tile on/off* switch in its right-click menu.
+
+### Tiles you can arrange
+Drag tiles to rearrange them — the others glide out of the way. Resize between Small, Medium,
+Wide and Large, drag a tile below the board to start a new group, drag a group header to
+reorder groups, and click a group header to name it.
+
+![Tile options](docs/screenshots/tile-menu.png)
+
+### Add anything to Start
+Right-click empty space on the tile board to **add any program, file, shortcut or website**.
+Websites use the site's favicon as their icon and its own preview image as a live tile, and
+anything you add can be renamed or re-pointed later with **Edit…**.
+
+### The expanded rail
+Click the hamburger for the labelled rail. Choose which shortcuts appear — Documents,
+Downloads, Music, Pictures, Videos, Network, Personal folder, File Explorer, Settings and a
+Calendar — in Settings.
+
+![The expanded rail](docs/screenshots/rail.png)
+
+### Calendar
+A three-month calendar with a note per day. Days with a note take their **category** colour,
+and you can add, rename, recolour and delete categories. Notes import and export as JSON or
+iCalendar (`.ics`). The window is resizable and remembers its size.
+
+![Calendar](docs/screenshots/calendar.png)
+
+### Settings
+
+![Settings](docs/screenshots/settings.png)
 
 ## How it replaces the Start menu — and why that is safe
 
@@ -61,36 +84,23 @@ Winly Start never injects into `explorer.exe`, never patches files, never writes
 `HKCU`. It uses three ordinary, revertible user-mode mechanisms:
 
 * **Windows key / Ctrl+Esc** — a low-level keyboard hook. When you tap the Windows key,
-  Winly Start lets the key through *and* sends a harmless unassigned key alongside it, so
+  Winly Start lets the key through *and* sends a harmless masking key alongside it, so
   Windows sees a "Win + something" chord and does not open its own menu. Every Win+X
   shortcut keeps working natively.
 * **Start button** — a low-level mouse hook that recognises a left-click on the taskbar's
   Start button (located through UI Automation, so it works with left- and centre-aligned
-  taskbars) and opens Winly Start instead.
+  taskbars). The menu opens **where the Start button is**.
 * **Fallback** — if the Windows 11 menu still appears (touch gesture, or the Windows key
   pressed while an elevated app has focus, which hooks cannot see), Winly Start notices it
   and takes over; the Windows menu dismisses itself.
 
 Closing Winly Start removes the hooks; Windows 11 is untouched.
 
-## Settings
-
-Tray icon → **Settings…**
-
-* Windows key and Ctrl+Esc open Winly Start · Clicking the Start button opens Winly Start
-* Start with Windows (a single `HKCU\…\Run` value — the only registry write Winly Start makes)
-* Theme: follow Windows / Light / Dark · Tile columns: 3 or 4 medium tiles · Menu height
-* Open under the Start button (for a centred taskbar) instead of the screen corner
-* Show "Recently added" / "Most used" · Trim memory when hidden
-
-Data lives in `%LocalAppData%\WinlyStart\` — `settings.json`, `tiles.json`, `usage.json`.
-
 ## Memory
 
 Winly Start is written to stay small: plain WPF, no UI frameworks, no WinForms, icons loaded
-lazily at the exact sizes shown on a single background thread and frozen, a virtualised app
-list, and the working set is trimmed when the menu hides. Expect a few tens of MB while the
-menu is closed.
+lazily at the exact sizes shown and frozen, a virtualised app list, live-tile timers that run
+only while the menu is open, and the working set is trimmed when the menu hides.
 
 ## Build from source
 
@@ -98,20 +108,24 @@ menu is closed.
 git clone https://github.com/Mahi-BD/WinlyStart
 cd WinlyStart
 dotnet build src/WinlyStart -c Release
-dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out
+dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o out/sc
 ```
 
 Requires the .NET 8 SDK. The project sets `EnableWindowsTargeting`, so it also *compiles*
-on Linux/macOS (handy for CI and reviews); it only *runs* on Windows 10/11.
+on Linux/macOS (handy for CI and reviews); it only *runs* on Windows 10/11. The installer is
+built with [Inno Setup](https://jrsoftware.org/isinfo.php) from `installer/WinlyStart.iss`.
 
 Developer notes, architecture and the project rules are in
 [`Repo/Instruction/read.md`](Repo/Instruction/read.md).
 
-## Known limitations (v0.1)
+## Known limitations
 
-* Opens on the primary monitor's taskbar; multi-monitor placement is on the roadmap.
+* The menu opens on the primary monitor's taskbar; multi-monitor placement is on the roadmap.
+* Acrylic renders as a solid tint on current Windows 11 builds — the old blur API no longer
+  blurs, and real blur needs the DWM system-backdrop path.
+* Website live tiles show the preview image a site publishes (`og:image`), not a live browser
+  render — embedding a browser engine would cost a large dependency and a lot of memory.
 * Pin to taskbar and jump lists are not available (no public API).
-* "Recently added" for packaged apps is based on when Winly Start first saw them.
 * While an **elevated** window has focus, the Windows key is handled by the fallback path
   (brief flicker of the Windows 11 menu). Winly Start deliberately does not run elevated.
 
