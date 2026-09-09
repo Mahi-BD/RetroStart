@@ -160,9 +160,27 @@ start menu, windows 10 start, live tiles, start menu replacement, classic start,
 **Applicable license terms** — the full MIT licence text, plus the source URL and the
 "not affiliated with Microsoft" disclaimer.
 
-## Open item
+## Submitted
 
-**The installer is not code-signed.** Partner Center runs a *Code sign check* during package
-validation. An unsigned installer may fail that check or draw a certification comment; fixing it
-needs an Authenticode certificate and a signing step in `.github/workflows/build.yml` before
-`ISCC`.
+Submitted **2026-09-09**. Status **In review** (Microsoft's SLA is 3 business days).
+All five sections green: Availability, Properties, Age ratings, Packages, Store listing.
+Store ID and the Store deep link only appear once the app goes live.
+
+### Package validation result (package 28995904, x64)
+
+| Check | Result |
+|---|---|
+| Malware check | **Passed** — "The package is found to be clean." |
+| Code sign check | **Passed** — "Your app has a valid code sign." |
+| Silent install check | Unknown — "We could not identify if your app is installing silently." |
+| Entry in add or remove programs | Unknown — could not identify the app and publisher name |
+| Bundleware check | Unknown — same reason |
+
+The three "unknown" results are the expected shape of a **per-user** Inno Setup install: the
+validation sandbox looks for a machine-wide Add/Remove Programs entry, and Winly Start writes its
+uninstall entry under `HKCU` instead. They are not failures, but they are the most likely thing a
+certification tester asks about — the certification notes already explain the per-user install.
+
+⚠️ The run takes far longer than the "approximately 30 mins" the page claims, and **the page does not
+refresh itself**: it showed both checks spinning for over an hour, and a hard reload after submitting
+revealed both had actually passed. Reload before concluding a run is stuck.

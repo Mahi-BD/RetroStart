@@ -329,6 +329,16 @@ Microsoft Store submission (2026-09-09):
   "no" to every content question).
 - The certification notes spell out the two user-mode hooks up front - a tester who finds
   `WH_KEYBOARD_LL` without that context is likely to flag the app.
+- ⚠️ **The rating sat at "Incomplete" for a non-obvious reason**: the IARC *Terms of Use* consent
+  checkbox at the bottom of the ratings summary was unticked, which silently disabled **Save** and
+  kept **Submit** greyed out. Answering the questionnaire and previewing is not enough - the box has
+  to be ticked and the summary saved.
+- ⚠️ **Package validation lies about being stuck.** The page claims ~30 minutes, does not refresh
+  itself, and showed Malware + Code sign spinning for over an hour. A hard reload after submitting
+  showed both had **passed** long before. Reload before assuming a run has wedged.
+- **Submitted 2026-09-09, status "In review"** (3 business-day SLA). Malware and Code sign passed;
+  silent-install / add-remove / bundleware came back *unknown* because the sandbox looks for a
+  machine-wide uninstall entry and this is a per-user install.
 
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
