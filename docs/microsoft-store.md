@@ -214,6 +214,52 @@ Microsoft Trusted Root Program; a self-signed certificate will not pass. Options
   hooks survive MSIX packaging is **unverified** — a full-trust packaged app should keep them, but
   that has not been tested.
 
+### The MSIX route (chosen)
+
+A certificate costs money and the SignPath Foundation needs an established user base, so the free
+path is the one Microsoft itself suggests in the rejection: **the Store code-signs MSIX packages at
+no charge.**
+
+CI builds `dist/WinlyStart-<version>.msix` **unsigned on purpose** — Partner Center re-signs it with
+the publisher identity, so signing it first would only have to be stripped.
+`packaging/build-msix.ps1` does the same thing on a Windows machine and additionally test-signs it
+with a throwaway self-signed certificate, because Windows refuses to install an unsigned MSIX.
+
+```powershell
+# local test build (elevated shell, so the throwaway cert can be trusted)
+.\packaginguild-msix.ps1 -InstallCert
+Add-AppxPackage .\dist\WinlyStart-1.5.1.msix
+
+# what goes to Partner Center
+.\packaginguild-msix.ps1 -NoSign -Publisher 'CN=<Partner Center publisher id>'
+```
+
+**One behavioural difference, and it is easy to miss.** A packaged app cannot write
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` — the write is redirected into the
+package's private registry hive, so it *appears* to succeed and the app simply never starts. So:
+
+* `Packaged.Is` detects package identity through `GetCurrentPackageFullName`.
+* `Autostart.Apply` returns immediately when packaged.
+* The manifest declares a `windows.startupTask` instead (`Enabled="false"`, so a fresh install does
+  not add itself to startup silently).
+* The Settings checkbox is disabled when packaged and says *"set in Settings › Apps › Startup"*,
+  rather than offering a switch the app cannot honour.
+
+`runFullTrust` is what keeps the rest working: Winly Start is an ordinary Win32/WPF process inside
+the package, not a sandboxed UWP app.
+
+⚠️ **Unverified:** that `WH_KEYBOARD_LL` / `WH_MOUSE_LL` and the UI Automation Start-button lookup
+still work from inside an MSIX. A full-trust packaged app should keep all of them, but this has not
+been run on a real machine yet. **Nothing in Partner Center has been deleted pending that test.**
+
+⚠️ **To use the name "Winly Start" for an MSIX product, the existing Win32 product must be deleted
+first** — Partner Center will not let two products hold one reserved name:
+
+> Note that you have to delete your app name from existing Win32 app in Partner Center in case you
+> want to use the same for MSIX packaged app.
+
+That is irreversible, so it waits until the hooks are proven to work packaged.
+
 ### Package validation result (package 28995904, x64)
 
 | Check | Result |
