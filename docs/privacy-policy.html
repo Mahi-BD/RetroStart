@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · Winly Start</title>
+<meta name="description" content="Winly Start collects no personal data. No telemetry, no analytics, no accounts.">
+<link rel="icon" href="favicon.png">
+<style>
+  :root{
+    --bg:#f3f3f3; --card:#fff; --border:#e3e3e3; --text:#1b1b1b; --muted:#616161; --accent:#0078d4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1b1b1b; --card:#242424; --border:#3a3a3a; --text:#f2f2f2; --muted:#a6a6a6; --accent:#4cadff; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.65 "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 20px 72px}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+  .logo{width:56px;height:56px;border-radius:12px;flex:0 0 auto}
+  h1{font-size:30px;margin:0;font-weight:600;letter-spacing:-.2px}
+  .sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+  .lead{background:var(--card);border:1px solid var(--border);border-radius:10px;
+        padding:18px 20px;margin:28px 0;font-size:17px;font-weight:600}
+  h2{font-size:19px;margin:34px 0 10px;font-weight:600}
+  p{margin:12px 0}
+  ul{margin:12px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{background:var(--card);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;font-family:Consolas,"Cascadia Mono",monospace;font-size:14px}
+  a{color:var(--accent)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="favicon.png" alt="" onerror="this.style.display='none'">
+    <div>
+      <h1>Winly Start — Privacy Policy</h1>
+      <p class="sub">Last updated: 9 September 2026</p>
+    </div>
+  </header>
+
+  <p class="lead">Winly Start does not collect, transmit or share any personal data.</p>
+
+  <p>There is no telemetry, no analytics, no advertising, no accounts and no crash reporting.</p>
+
+  <h2>What stays on your PC</h2>
+  <p>Winly Start stores its settings and your layout in your own user folder,
+     <code>%LocalAppData%\WinlyStart</code>:</p>
+  <ul>
+    <li><code>settings.json</code> — your preferences (theme, rail icons, menu size, account picture path)</li>
+    <li><code>tiles.json</code> — your tile and group layout</li>
+    <li><code>usage.json</code> — how often you launch each app, used only for “Most used”</li>
+    <li><code>custom.json</code> — programs, files and websites you added yourself</li>
+    <li><code>calendar.json</code> — your calendar notes and categories</li>
+    <li><code>web\</code> — cached favicons and preview images for website tiles</li>
+    <li><code>error.log</code>, <code>debug.log</code> — written only if something goes wrong, or if you turn on diagnostics</li>
+  </ul>
+  <p>These files never leave your computer. Uninstalling leaves them in place; delete the folder to
+     remove them.</p>
+
+  <h2>Network access</h2>
+  <p>Winly Start makes network requests in exactly one case: when you add a <strong>website</strong>
+     tile, it requests that website in order to read its icon and the preview image the site
+     publishes, so the tile can show them. Those requests go directly to the website you chose and to
+     nowhere else. No identifiers are attached beyond a normal browser-style user agent.</p>
+  <p>If you never add a website tile, Winly Start makes no network requests at all.</p>
+
+  <h2>Permissions</h2>
+  <p>Winly Start runs as a normal user and never requests administrator rights. It reads your
+     installed applications from the Windows Start Menu folders in order to list them, and it writes a
+     single optional <code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</code> value if you turn
+     on “Start with Windows”. It does not modify Windows itself.</p>
+
+  <h2>Children</h2>
+  <p>Winly Start is a general-purpose desktop utility. It collects nothing from anyone, including
+     children.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy ever changes, the updated version will be published on this page with a new date.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or concerns:
+     <a href="https://github.com/Mahi-BD/WinlyStart/issues">github.com/Mahi-BD/WinlyStart/issues</a></p>
+
+  <footer>
+    <a href="./">Winly Start</a> ·
+    <a href="https://github.com/Mahi-BD/WinlyStart">Source on GitHub</a> ·
+    MIT licence. Not affiliated with Microsoft.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Winly Start — the Windows 10 Start menu, back on Windows 11</title>
+<meta name="description" content="Winly Start brings the Windows 10 Start menu to Windows 11: left rail, A–Z app list, live tiles and a tile board — without modifying Windows.">
+<link rel="icon" href="favicon.png">
+<style>
+  :root{ --bg:#f3f3f3; --card:#fff; --border:#e3e3e3; --text:#1b1b1b; --muted:#616161; --accent:#0078d4; --accentText:#fff; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1b1b1b; --card:#242424; --border:#3a3a3a; --text:#f2f2f2; --muted:#a6a6a6; --accent:#4cadff; --accentText:#04263f; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.65 "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:900px;margin:0 auto;padding:56px 20px 72px}
+  header{display:flex;align-items:center;gap:18px}
+  .logo{width:72px;height:72px;border-radius:16px}
+  h1{font-size:34px;margin:0;font-weight:600;letter-spacing:-.4px}
+  .tag{color:var(--muted);margin:4px 0 0}
+  .cta{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 8px}
+  .btn{display:inline-block;padding:11px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:15px;
+       background:var(--accent);color:var(--accentText)}
+  .btn.alt{background:var(--card);color:var(--text);border:1px solid var(--border);font-weight:500}
+  .note{color:var(--muted);font-size:14px;margin:6px 0 0}
+  img.shot{width:100%;border:1px solid var(--border);border-radius:10px;margin:26px 0 0;display:block}
+  h2{font-size:20px;margin:38px 0 10px;font-weight:600}
+  ul{padding-left:22px} li{margin:7px 0}
+  a{color:var(--accent)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="favicon.png" alt="">
+    <div>
+      <h1>Winly Start</h1>
+      <p class="tag">The Windows 10 Start menu, back on Windows 11.</p>
+    </div>
+  </header>
+
+  <div class="cta">
+    <a class="btn" href="https://github.com/Mahi-BD/WinlyStart/releases/latest">Download the installer</a>
+    <a class="btn alt" href="https://github.com/Mahi-BD/WinlyStart">Source on GitHub</a>
+    <a class="btn alt" href="privacy-policy.html">Privacy policy</a>
+  </div>
+  <p class="note">Free and open source (MIT). Per-user install — no administrator rights needed.</p>
+
+  <img class="shot" src="screenshots/menu.png" alt="The Winly Start menu on Windows 11">
+
+  <h2>What it does</h2>
+  <ul>
+    <li>The Start button, the Windows key and Ctrl+Esc open Winly Start instead of the Windows 11 menu.</li>
+    <li>Left rail, “Recently added” and “Most used”, an A–Z app list with folders, and a tile board with groups.</li>
+    <li>Live tiles — calendar, clock, a Pictures slideshow, and website tiles showing each site’s own preview.</li>
+    <li>Add any program, file, shortcut or website to Start, and edit it later.</li>
+    <li>A three-month calendar with colour-categorised notes, importable and exportable as JSON or iCalendar.</li>
+    <li>Follows your Windows 11 light/dark mode, accent colour and taskbar position.</li>
+  </ul>
+
+  <h2>It doesn’t modify Windows</h2>
+  <p>Winly Start never injects into Explorer, never patches system files and never writes outside your
+     own user settings. It runs as a normal user and never asks for administrator rights. Quit it and
+     the Windows 11 Start menu is back instantly.</p>
+
+  <footer>
+    © Winly Start contributors · MIT licence · Not affiliated with Microsoft.
+    Windows, Windows 10 and Windows 11 are trademarks of Microsoft Corporation.
+  </footer>
+</div>
+</body>
+</html>
