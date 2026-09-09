@@ -16,6 +16,16 @@ public partial class SettingsWindow : Window
         WinKey.IsChecked = s.ReplaceWinKey;
         StartButton.IsChecked = s.ReplaceStartButton;
         Autostart.IsChecked = s.StartWithWindows;
+        if (Packaged.Is)
+        {
+            // Windows owns the startup switch for a packaged app (Settings › Apps › Startup), so
+            // showing a checkbox we cannot honour would be a lie. Point at the real control instead.
+            Autostart.IsEnabled = false;
+            Autostart.Content = "Start with Windows — set in Settings › Apps › Startup";
+            Autostart.ToolTip = "Winly Start was installed from the Microsoft Store. "
+                              + "Windows manages startup for Store apps; open "
+                              + "Settings › Apps › Startup to turn it on or off.";
+        }
         ThemeBox.SelectedIndex = (int)s.Theme;
         ColumnsBox.SelectedIndex = s.TileColumns == 8 ? 1 : 0;
         HeightSlider.Value = s.MenuHeight;

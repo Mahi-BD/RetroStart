@@ -135,6 +135,12 @@ internal static class Autostart
 
     public static void Apply(bool enabled)
     {
+        // A packaged (MSIX) build declares startup through the windows.startupTask extension in its
+        // manifest, and Windows — not us — owns the on/off switch. Writing the Run key there is
+        // redirected into the package's private registry hive, so it would look like it worked and
+        // silently never start the app. Leave it alone.
+        if (Packaged.Is) return;
+
         try
         {
             using var k = Registry.CurrentUser.CreateSubKey(Key);

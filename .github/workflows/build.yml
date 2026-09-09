@@ -115,6 +115,38 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "signature verification failed for $f" }
           }
 
+      # The Store rejects an unsigned .exe under policy 10.2.9, but it code-signs MSIX packages for
+      # free - so we also ship an MSIX. It is built UNSIGNED on purpose: Partner Center re-signs it
+      # with the publisher identity, and signing it here would only have to be stripped.
+      # packaging/build-msix.ps1 does the same thing locally, plus a self-signed cert for testing.
+      - name: Publish (MSIX payload)
+        run: dotnet publish src/WinlyStart -c Release -r win-x64 --self-contained true -o out/msixpayload
+
+      - name: Build MSIX
+        shell: pwsh
+        run: |
+          $payload = 'out/msixpayload'
+          Copy-Item packaging/Assets $payload -Recurse -Force
+
+          # An MSIX identity version is always four parts and the revision must be 0.
+          $v = [version]$env:APP_VERSION
+          $appxVersion = '{0}.{1}.{2}.0' -f $v.Major, $v.Minor, $v.Build
+          $manifest = Get-Content packaging/AppxManifest.xml -Raw
+          $manifest = $manifest -replace 'Version="[\d\.]+"', "Version=`"$appxVersion`""
+          Set-Content (Join-Path $payload 'AppxManifest.xml') $manifest -Encoding UTF8
+
+          Get-ChildItem $payload -Filter *.pdb -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
+
+          $makeappx = Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin' -Recurse -Filter makeappx.exe |
+            Where-Object { $_.FullName -like '*\x64\*' } |
+            Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $makeappx) { throw 'makeappx.exe not found' }
+
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          & $makeappx pack /o /d $payload /p "dist/WinlyStart-$env:APP_VERSION.msix"
+          if ($LASTEXITCODE -ne 0) { throw 'makeappx failed' }
+          Get-ChildItem dist
+
       - name: Zip portable builds
         shell: pwsh
         run: |
@@ -126,6 +158,7 @@ jobs:
           name: WinlyStart
           path: |
             dist/*.exe
+            dist/*.msix
             WinlyStart-win-x64.zip
             WinlyStart-win-x64-selfcontained.zip
 
@@ -135,6 +168,7 @@ jobs:
         with:
           files: |
             dist/*.exe
+            dist/*.msix
             WinlyStart-win-x64.zip
             WinlyStart-win-x64-selfcontained.zip
           generate_release_notes: true

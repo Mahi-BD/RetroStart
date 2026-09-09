@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest for Winly Start.
+
+  Why MSIX exists alongside the Inno Setup installer: Microsoft Store policy 10.2.9 rejects an
+  unsigned .exe, and a code-signing certificate costs money, but the Store code-signs MSIX packages
+  for free. This package wraps the *same* self-contained build the installer ships.
+
+  Two things make this work for a desktop app that installs low-level hooks:
+    * runFullTrust  - Winly Start is a normal Win32/WPF process, not a sandboxed UWP app. Full trust
+                      is what lets it keep SetWindowsHookEx, UI Automation and the shell APIs.
+    * startupTask   - replaces the HKCU\...\Run value the unpackaged build writes. A packaged app
+                      cannot write that key (it is redirected into the package's private hive), so
+                      startup is declared here and owned by the user in Settings > Apps > Startup.
+
+  Publisher must match the certificate the package is signed with. For local testing that is the
+  self-signed CN produced by packaging/build-msix.ps1; for the Store, Partner Center re-signs the
+  package with the publisher identity from
+  Product identity > Package identity (Package/Identity/Publisher).
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 uap5 desktop rescap">
+
+  <Identity
+    Name="RampsBD.WinlyStart"
+    Publisher="CN=WinlyStartDev"
+    Version="1.5.1.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>Winly Start</DisplayName>
+    <PublisherDisplayName>Winly Start contributors</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>The Windows 10 Start menu, back on Windows 11.</Description>
+  </Properties>
+
+  <Dependencies>
+    <!-- 1809 is the first build with the taskbar/UIA behaviour Winly Start relies on. -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26200.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="WinlyStart" Executable="WinlyStart.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Winly Start"
+        Description="The Windows 10 Start menu, back on Windows 11."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\SplashScreen.png" BackgroundColor="#0A55BD" />
+      </uap:VisualElements>
+
+      <Extensions>
+        <!-- The packaged equivalent of the HKCU Run value. EnabledByDefault is false so a fresh
+             install does not silently add itself to startup; the user turns it on in
+             Settings > Apps > Startup, exactly as the Settings dialog tells them. -->
+        <uap5:Extension
+          Category="windows.startupTask"
+          Executable="WinlyStart.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <uap5:StartupTask
+            TaskId="WinlyStartAutostart"
+            Enabled="false"
+            DisplayName="Winly Start" />
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Required for any Win32 desktop app in an MSIX. Declared to the Store as a restricted
+         capability; it is the standard declaration for Desktop Bridge apps. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>
