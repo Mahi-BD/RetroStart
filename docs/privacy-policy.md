@@ -1,5 +1,8 @@
 # Winly Start — Privacy Policy
 
+> Published at <https://mahi-bd.github.io/WinlyStart/privacy-policy.html> — that page is the copy to link from
+> Partner Center and app stores. This file is the source it mirrors.
+
 _Last updated: 9 September 2026_
 
 **Winly Start does not collect, transmit or share any personal data.**

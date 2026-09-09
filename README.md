@@ -5,6 +5,8 @@
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4)
 
+**[winlystart website](https://mahi-bd.github.io/WinlyStart/)** · **[download](https://github.com/Mahi-BD/WinlyStart/releases/latest)**
+
 **The Windows 10 Start menu, back on Windows 11.**
 
 Winly Start is a small, open-source (MIT) .NET 8 app that brings the Windows 10 Start menu
@@ -133,7 +135,7 @@ Developer notes, architecture and the project rules are in
 
 Winly Start collects nothing — no telemetry, no analytics, no accounts. Everything stays in
 `%LocalAppData%\WinlyStart`. The only network requests it ever makes are to a website you add as a
-tile, to read that site's icon and preview image. See [the privacy policy](docs/privacy-policy.md).
+tile, to read that site's icon and preview image. See [the privacy policy](https://mahi-bd.github.io/WinlyStart/privacy-policy.html).
 
 ## Contributing
 

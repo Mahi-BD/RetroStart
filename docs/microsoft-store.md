@@ -37,7 +37,9 @@ Silent install/uninstall switches Partner Center asks for (Inno Setup):
 2. **Reserve the name**: `Winly Start`. (If taken, `Winly Start — Windows 10 Start Menu`.)
 3. **Pricing and availability** → Free, all markets, all Windows 10/11 desktop devices.
 4. **Properties** → Category **Utilities & tools**, subcategory *File managers* or *Personalization*.
-   Support contact: the GitHub issues URL. Privacy policy URL: see below.
+   Support contact: <https://github.com/Mahi-BD/WinlyStart/issues>.
+   Privacy policy URL: <https://mahi-bd.github.io/WinlyStart/privacy-policy.html>
+   Website: <https://mahi-bd.github.io/WinlyStart/>
 5. **Store listing** → paste the copy below, upload the screenshots in `docs/store/`.
 6. **Packages** → installer URL + the silent switches above.
 7. **Submit** for certification.
@@ -107,9 +109,8 @@ start menu, windows 10 start, live tiles, start menu replacement, classic start,
 
 ## Still needed before submitting
 
-1. **A privacy policy URL** — Partner Center requires one even for an app that collects nothing.
-   Publish `docs/privacy-policy.md` (in this repo) as a page, e.g. via GitHub Pages:
-   `https://mahi-bd.github.io/WinlyStart/privacy-policy.html`.
+1. ~~A privacy policy URL~~ — **done**, published on GitHub Pages:
+   <https://mahi-bd.github.io/WinlyStart/privacy-policy.html>
 2. **Age rating questionnaire** — answer "no" to everything; it will come out as *Everyone*.
 3. **A Partner Center developer account** (one-off registration fee) if the account is not already
    registered as a publisher.
