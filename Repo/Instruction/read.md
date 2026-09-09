@@ -295,6 +295,20 @@ Ninth round — v1.5.0 (verified live):
   group** (removing one with tiles asks first).
 - Version **1.5.0** (csproj, manifest, installer, CI).
 
+Tenth round — v1.5.1 (verified live):
+- ⚠️ **Dragging a tile into another group could silently fail.** The live drag preview kept re-placing
+  the tile in the *source* group as the pointer moved past it, which grew that group's canvas over the
+  group being aimed at; the drop then hit-tested back into the source. Worst case the tile was left
+  stranded on a far row (row 8), leaving a big gap.
+  Three changes: the preview only runs while the pointer is over the source group and puts the tile
+  back at its starting cell as soon as the pointer leaves; the preview row is clamped to
+  `LastContentRow` so a group cannot stretch downwards without limit; and, decisively, every group's
+  canvas rectangle is **snapshotted at drag start** (`CaptureGroupRects` / `GroupAt`) so mid-drag
+  reflow cannot move the drop targets. The drop is now hit-tested from the **pointer**, not the tile
+  centre.
+  Verified all three directions: up into an earlier group, down into a later one, and into an **empty**
+  group (the case that stayed broken after the first fix).
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

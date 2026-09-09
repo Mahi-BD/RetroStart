@@ -502,7 +502,12 @@ public partial class StartMenuWindow : Window
     // ───────────────────────── tile drag (smooth, Windows 10 style) ─────────────────────────
 
     private ItemsControl? _dragHost;          // canvas of the group the drag started in
-    private double _dragBaseX, _dragBaseY;    // the tile's layout cell when the drag began
+    private double _dragBaseX, _dragBaseY;    // the tile's layout position when the drag began
+    private int _dragOrigCol, _dragOrigRow;   // the tile's cell when the drag began
+    // Group rectangles captured when the drag starts. Hit-testing against live rectangles is not
+    // reliable: the live reflow changes the source group's height mid-drag, which slides the other
+    // groups around and lets the source swallow the drop the user was aiming at.
+    private readonly List<(TileGroupVm Group, ItemsControl Host, Rect Rect)> _dragRects = new();
 
     private void Tile_MouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -528,24 +533,32 @@ public partial class StartMenuWindow : Window
             t.ShowLive = false;
             _dragHost = HostOf(t.Group);
             _dragBaseX = t.X; _dragBaseY = t.Y;
+            _dragOrigCol = t.Col; _dragOrigRow = t.Row;
+            CaptureGroupRects();
             Scale(_dragBorder).ScaleX = Scale(_dragBorder).ScaleY = 1.05;   // lift
         }
 
-        // Live preview: while over the source group, park the tile in the cell under the pointer so
-        // the other tiles glide out of the way — the reflow the user sees before letting go.
-        if (_dragHost != null)
+        // Live preview, but ONLY while the pointer is over the source group. Previewing outside it used
+        // to push the tile to an ever-lower row, which grew the source group's canvas over whichever
+        // group the user was aiming at — so the drop then landed back in the source group.
+        var pointer = e.GetPosition(this);
+        var over = GroupAt(pointer, out var overHost);
+        if (over == t.Group && overHost != null)
         {
-            var pos = e.GetPosition(this);
-            var local = TranslatePoint(new Point(pos.X - _grabOffset.X, pos.Y - _grabOffset.Y), _dragHost);
-            bool inside = local.X > -TileVm.Pitch && local.X < _dragHost.ActualWidth + TileVm.Pitch
-                       && local.Y > -TileVm.Pitch && local.Y < _dragHost.ActualHeight + TileVm.Pitch;
+            var local = TranslatePoint(new Point(pointer.X - _grabOffset.X, pointer.Y - _grabOffset.Y), overHost);
             int col = Math.Clamp((int)Math.Round(local.X / TileVm.Pitch), 0, Math.Max(0, t.Group.Columns - t.Cols));
-            int row = Math.Max(0, (int)Math.Round(local.Y / TileVm.Pitch));
-            if (inside && (col != t.Col || row != t.Row))
+            int row = Math.Clamp((int)Math.Round(local.Y / TileVm.Pitch), 0, LastContentRow(t.Group, t));
+            if (col != t.Col || row != t.Row)
             {
                 t.Col = col; t.Row = row;
                 AnimatedPack(t.Group, priority: t, exclude: t);
             }
+        }
+        else if (t.Col != _dragOrigCol || t.Row != _dragOrigRow)
+        {
+            // pointer is over another group (or nothing) → put the source group back as it was
+            t.Col = _dragOrigCol; t.Row = _dragOrigRow;
+            AnimatedPack(t.Group, priority: t, exclude: t);
         }
         // Keep the dragged tile under the pointer even though its layout cell may just have moved.
         var tt = Translate(_dragBorder);
@@ -566,8 +579,7 @@ public partial class StartMenuWindow : Window
         if (!_dragging) { tt.X = 0; tt.Y = 0; LaunchApp(t.App); return; }
         _dragging = false;
         t.IsDragging = false;
-        var pos = e.GetPosition(this);
-        DropTile(t, new Point(pos.X - _grabOffset.X, pos.Y - _grabOffset.Y));
+        DropTile(t, e.GetPosition(this));
 
         // ease from under the pointer into the cell instead of snapping
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
@@ -576,30 +588,20 @@ public partial class StartMenuWindow : Window
         tt.X = 0; tt.Y = 0;
     }
 
-    private void DropTile(TileVm tile, Point topLeft)
+    private void DropTile(TileVm tile, Point pointer)
     {
-        var centre = new Point(topLeft.X + tile.Width / 2, topLeft.Y + tile.Height / 2);
-        TileGroupVm? target = null;
-        ItemsControl? host = null;
-        foreach (var g in _groups)
-        {
-            if (HostOf(g) is not { } ic) continue;
-            var rect = new Rect(ic.TranslatePoint(new Point(0, 0), this), new Size(ic.ActualWidth, Math.Max(ic.ActualHeight, 1)));
-            rect.Inflate(0, TileVm.Pitch);
-            if (rect.Contains(centre)) { target = g; host = ic; break; }
-        }
-
+        var target = GroupAt(pointer, out var host);
         var source = tile.Group;
         if (target == null || host == null)
         {
             // Windows 10 behaviour: dropping a tile below every group starts a NEW group.
             // Dropping anywhere else that isn't a group just glides the tile back.
-            if (centre.Y > BottomOfLastGroup()) StartNewGroupWith(tile, source);
+            if (pointer.Y > SnapshotBottom()) StartNewGroupWith(tile, source);
             else AnimatedPack(source);
             return;
         }
 
-        var local = TranslatePoint(topLeft, host);
+        var local = TranslatePoint(new Point(pointer.X - _grabOffset.X, pointer.Y - _grabOffset.Y), host);
         if (target != source)
         {
             source.Tiles.Remove(tile);
@@ -607,12 +609,48 @@ public partial class StartMenuWindow : Window
             target.Tiles.Add(tile);
             target.KeepEmpty = false;
         }
-        tile.Col = (int)Math.Round(local.X / TileVm.Pitch);
+        tile.Col = Math.Clamp((int)Math.Round(local.X / TileVm.Pitch), 0, Math.Max(0, target.Columns - tile.Cols));
         tile.Row = Math.Max(0, (int)Math.Round(local.Y / TileVm.Pitch));
         AnimatedPack(target, priority: tile, exclude: target == source ? tile : null);
         if (target != source) AnimatedPack(source);
         RemoveEmptyGroups();
         SaveTiles();
+    }
+
+    /// <summary>Snapshot every group's tile canvas, in window coordinates, for the duration of a drag.</summary>
+    private void CaptureGroupRects()
+    {
+        _dragRects.Clear();
+        foreach (var g in _groups)
+        {
+            if (HostOf(g) is not { } ic) continue;
+            var rect = new Rect(ic.TranslatePoint(new Point(0, 0), this),
+                                new Size(ic.ActualWidth, Math.Max(ic.ActualHeight, 1)));
+            rect.Inflate(0, TileVm.Gap);            // a hair of slack, not a whole tile
+            _dragRects.Add((g, ic, rect));
+        }
+    }
+
+    /// <summary>The group whose tile canvas was under this window point when the drag began.</summary>
+    private TileGroupVm? GroupAt(Point p, out ItemsControl? host)
+    {
+        foreach (var (g, ic, rect) in _dragRects)
+            if (rect.Contains(p)) { host = ic; return g; }
+        host = null;
+        return null;
+    }
+
+    /// <summary>Bottom of the lowest group as captured at drag start.</summary>
+    private double SnapshotBottom() => _dragRects.Count == 0 ? 0 : _dragRects.Max(r => r.Rect.Bottom);
+
+    /// <summary>Lowest row a preview may use: just past the group's existing content, so dragging
+    /// around inside a group cannot stretch it downwards without limit.</summary>
+    private static int LastContentRow(TileGroupVm g, TileVm dragged)
+    {
+        int max = 0;
+        foreach (var t in g.Tiles)
+            if (t != dragged) max = Math.Max(max, t.Row + t.Rows);
+        return max;
     }
 
     private ItemsControl? HostOf(TileGroupVm g) =>
@@ -638,20 +676,6 @@ public partial class StartMenuWindow : Window
             cp.BeginAnimation(Canvas.LeftProperty, new DoubleAnimation(old.x, t.X, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
             cp.BeginAnimation(Canvas.TopProperty, new DoubleAnimation(old.y, t.Y, TimeSpan.FromMilliseconds(220)) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
         }
-    }
-
-    /// <summary>Y (window coords) of the bottom of the last group's tile canvas.</summary>
-    private double BottomOfLastGroup()
-    {
-        double bottom = 0;
-        foreach (var g in _groups)
-        {
-            if (TileGroupsControl.ItemContainerGenerator.ContainerFromItem(g) is not ContentPresenter cp) continue;
-            if (FindChild<ItemsControl>(cp) is not { } ic) continue;
-            double y = ic.TranslatePoint(new Point(0, ic.ActualHeight), this).Y;
-            if (y > bottom) bottom = y;
-        }
-        return bottom;
     }
 
     /// <summary>Move a tile into a brand-new, unnamed group at the end of the board.</summary>
