@@ -268,6 +268,12 @@
                             Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisInverse}}"
                             MouseLeftButtonDown="GroupHeader_MouseDown" MouseMove="GroupHeader_MouseMove"
                             MouseLeftButtonUp="GroupHeader_MouseUp">
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Rename group" Click="GroupRename_Click"/>
+                                <MenuItem Header="Remove group" Click="GroupRemove_Click"/>
+                            </ContextMenu>
+                        </Border.ContextMenu>
                         <Grid>
                             <TextBlock Text="{Binding Name}" Margin="4,0,0,0" FontSize="14"
                                        VerticalAlignment="Center" Foreground="{DynamicResource Rs.Text}"
@@ -378,6 +384,8 @@
                     <MenuItem Header="Add program or file…" Click="AddFile_Click"/>
                     <MenuItem Header="Add website…" Click="AddWebsite_Click"/>
                     <Separator/>
+                    <MenuItem Header="New group" Click="NewGroup_Click"/>
+                    <Separator/>
                     <MenuItem Header="Settings…" Click="MenuSettings_Click"/>
                     <MenuItem Header="About Winly Start" Click="MenuAbout_Click"/>
                 </ContextMenu>
@@ -430,6 +438,26 @@
                 <Border/>
             </DockPanel>
         </Border>
+
+        <!-- ───────── resize grips (menu is bottom-left anchored, grows up/right) ───────── -->
+        <Thumb x:Name="TopGrip" Grid.ColumnSpan="3" Height="6" VerticalAlignment="Top" HorizontalAlignment="Stretch"
+               Cursor="SizeNS" Panel.ZIndex="90" Opacity="0" Background="Transparent"
+               DragStarted="Grip_DragStarted" DragDelta="TopGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
+        <Thumb x:Name="RightGrip" Grid.ColumnSpan="3" Width="6" HorizontalAlignment="Right" VerticalAlignment="Stretch"
+               Cursor="SizeWE" Panel.ZIndex="90" Opacity="0" Background="Transparent"
+               DragStarted="Grip_DragStarted" DragDelta="RightGrip_DragDelta" DragCompleted="Grip_DragCompleted"/>
+        <Thumb x:Name="CornerGrip" Grid.ColumnSpan="3" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top"
+               Cursor="SizeNESW" Panel.ZIndex="96" ToolTip="Drag to resize"
+               DragStarted="Grip_DragStarted" DragDelta="CornerGrip_DragDelta" DragCompleted="Grip_DragCompleted">
+            <Thumb.Template>
+                <ControlTemplate TargetType="Thumb">
+                    <Grid Background="Transparent">
+                        <Path Stroke="{DynamicResource Rs.TextSecondary}" StrokeThickness="1" SnapsToDevicePixels="True"
+                              Data="M17,3 L3,17  M17,8 L8,17  M17,13 L13,17" Opacity="0.9"/>
+                    </Grid>
+                </ControlTemplate>
+            </Thumb.Template>
+        </Thumb>
 
         <!-- hairline outline: separates the menu from the taskbar and the desktop -->
         <Border x:Name="Outline" Grid.ColumnSpan="3" BorderBrush="{DynamicResource Rs.Divider}" BorderThickness="1"

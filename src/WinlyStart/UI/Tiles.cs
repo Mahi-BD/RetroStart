@@ -110,7 +110,10 @@ public sealed class TileGroupVm : INotifyPropertyChanged
     public double PixelWidth => Columns * TileVm.Pitch - TileVm.Gap;
     public double PixelHeight => Math.Max(_rows, 2) * TileVm.Pitch - TileVm.Gap;
 
-    public void Add(TileVm t) { t.Group = this; Tiles.Add(t); Pack(); }
+    /// <summary>Set when the user made this group by hand; it then survives while empty.</summary>
+    public bool KeepEmpty { get; set; }
+
+    public void Add(TileVm t) { t.Group = this; Tiles.Add(t); KeepEmpty = false; Pack(); }
     public void Remove(TileVm t) { Tiles.Remove(t); Pack(); }
 
     /// <summary>
@@ -153,24 +156,18 @@ public sealed class TileGroupVm : INotifyPropertyChanged
         }
         foreach (var t in order) Place(t, keep: true);
 
-        // Windows 10 never leaves a whole empty row inside a group, so close any gaps. Only rows that
-        // no tile occupies are removed, which keeps every multi-row tile contiguous.
-        int kept = 0;
-        var newRow = new int[grid.Count];
-        for (int r = 0; r < grid.Count; r++)
-        {
-            newRow[r] = kept;
-            if (Array.IndexOf(grid[r], true) >= 0) kept++;
-        }
-        if (kept != grid.Count)
-            foreach (var t in Tiles)
-                if (t.Row >= 0 && t.Row < newRow.Length) t.Row = newRow[t.Row];
+        // Keep the layout the user made: tiles stay in the cells they were dropped in, gaps and all.
+        // Only a gap at the very TOP is closed, so a group never floats away from its header.
+        int first = 0;
+        while (first < grid.Count && Array.IndexOf(grid[first], true) < 0) first++;
+        if (first > 0 && first < grid.Count)
+            foreach (var t in Tiles) t.Row = Math.Max(0, t.Row - first);
 
-        _rows = kept;
+        _rows = Math.Max(0, grid.Count - first);
         Raise(nameof(PixelHeight));
     }
 
-    public TileGroup ToModel() => new() { Name = _name ?? string.Empty, Tiles = Tiles.Select(t => t.ToModel()).ToList() };
+    public TileGroup ToModel() => new() { Name = _name ?? string.Empty, KeepEmpty = KeepEmpty, Tiles = Tiles.Select(t => t.ToModel()).ToList() };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void Raise(string n) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(n));
@@ -183,7 +180,7 @@ public static class TileBoard
         var groups = new ObservableCollection<TileGroupVm>();
         foreach (var g in layout.Groups)
         {
-            var vm = new TileGroupVm(g.Name, columns);
+            var vm = new TileGroupVm(g.Name, columns) { KeepEmpty = g.KeepEmpty };
             foreach (var t in g.Tiles)
             {
                 var app = catalog.Find(t.AppId);

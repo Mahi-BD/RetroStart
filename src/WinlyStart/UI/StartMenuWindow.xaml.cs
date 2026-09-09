@@ -334,7 +334,7 @@ public partial class StartMenuWindow : Window
     private void RemoveEmptyGroups()
     {
         for (int i = _groups.Count - 1; i >= 0; i--)
-            if (_groups[i].Tiles.Count == 0 && _groups.Count > 1) _groups.RemoveAt(i);
+            if (_groups[i].Tiles.Count == 0 && !_groups[i].KeepEmpty && _groups.Count > 1) _groups.RemoveAt(i);
     }
 
     // ───────────────────────── keyboard / search ─────────────────────────
@@ -605,6 +605,7 @@ public partial class StartMenuWindow : Window
             source.Tiles.Remove(tile);
             tile.Group = target;
             target.Tiles.Add(tile);
+            target.KeepEmpty = false;
         }
         tile.Col = (int)Math.Round(local.X / TileVm.Pitch);
         tile.Row = Math.Max(0, (int)Math.Round(local.Y / TileVm.Pitch));
@@ -659,6 +660,7 @@ public partial class StartMenuWindow : Window
         var group = new TileGroupVm(string.Empty, App.Settings.TileColumns);
         _groups.Add(group);
         source.Tiles.Remove(tile);
+        group.KeepEmpty = false;
         tile.Group = group;
         tile.Col = 0;
         tile.Row = 0;
@@ -857,6 +859,40 @@ public partial class StartMenuWindow : Window
         var w = new InputWindow(app.Name, app.CustomTarget);
         if (w.ShowDialog() != true) return;
         App.Catalog.UpdateCustom(app.Id, w.ResultName, w.ResultValue);
+    }
+
+    /// <summary>Creates an empty group at the end of the board, ready to be named and dropped into.</summary>
+    private void NewGroup_Click(object sender, RoutedEventArgs e)
+    {
+        var g = new TileGroupVm(string.Empty, App.Settings.TileColumns) { KeepEmpty = true };
+        _groups.Add(g);
+        SaveTiles();
+        g.IsEditing = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+        {
+            if (TileGroupsControl.ItemContainerGenerator.ContainerFromItem(g) is not ContentPresenter cp) return;
+            if (FindChild<TextBox>(cp) is not { } box) return;
+            box.Focus();
+            box.SelectAll();
+        }));
+    }
+
+    private void GroupRename_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not TileGroupVm g) return;
+        g.IsEditing = true;
+    }
+
+    private void GroupRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not TileGroupVm g) return;
+        if (g.Tiles.Count > 0 &&
+            MessageBox.Show(this, $"Remove the group “{(g.Name.Length > 0 ? g.Name : "unnamed")}” and unpin its {g.Tiles.Count} tile(s)?",
+                "Remove group", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+        _groups.Remove(g);
+        if (_groups.Count == 0) _groups.Add(new TileGroupVm(string.Empty, App.Settings.TileColumns) { KeepEmpty = true });
+        SaveTiles();
+        RebuildRows();
     }
 
     private void MenuSettings_Click(object sender, RoutedEventArgs e)

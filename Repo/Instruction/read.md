@@ -281,6 +281,20 @@ Eighth round (verified live):
   validates the scheme for websites. `AppCatalog.UpdateCustom` saves and clears the cached favicon and
   preview when the target changes, so a new site re-fetches its own assets.
 
+Ninth round — v1.5.0 (verified live):
+- ⚠️ **Regression fixed: the menu had stopped being resizable.** Rewriting the expanded-rail block in
+  the previous round deleted the `TopGrip` / `RightGrip` / `CornerGrip` Thumbs, which sat between the
+  rail and the flyouts in the XAML. The handlers still existed, so it compiled with zero warnings and
+  the loss was silent. They are restored (corner grip at `ZIndex 96`, above the outline).
+- **Much less auto-arranging.** `Pack()` no longer collapses empty rows inside a group: tiles stay in
+  the cells they were dropped in, gaps included. Only a gap at the very *top* of a group is closed so a
+  group cannot float away from its header, and genuine overlaps are still resolved.
+- **Groups are explicit.** The board's right-click menu has **New group**, which creates an empty,
+  named group that survives (`TileGroup.KeepEmpty`, persisted) instead of being auto-pruned; dropping a
+  tile in clears the flag. The group header has its own context menu — **Rename group** / **Remove
+  group** (removing one with tiles asks first).
+- Version **1.5.0** (csproj, manifest, installer, CI).
+
 Known rough edge: **acrylic renders as a solid tint on build 26200** — `SetWindowCompositionAttribute`
 no longer blurs on current Windows 11. Real blur needs the DWM SystemBackdrop path (roadmap). The
 surface still tints correctly to the theme.

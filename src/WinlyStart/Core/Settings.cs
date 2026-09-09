@@ -107,6 +107,8 @@ public sealed class TileGroup
 {
     public string Name { get; set; } = string.Empty;
     public List<Tile> Tiles { get; set; } = new();
+    /// <summary>A group the user created by hand: keep it even while it is still empty.</summary>
+    public bool KeepEmpty { get; set; }
 }
 
 public sealed class TileLayout
