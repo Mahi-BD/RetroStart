@@ -131,6 +131,14 @@ Developer notes, architecture and the project rules are in
 * While an **elevated** window has focus, the Windows key is handled by the fallback path
   (brief flicker of the Windows 11 menu). Winly Start deliberately does not run elevated.
 
+## Code signing
+
+Release binaries are built on a clean GitHub Actions runner from the tagged public commit, never
+from a developer machine, and every executable and the installer are signed and then verified with
+`signtool verify /pa` before the release is published. Who may author, review and approve a signing
+request is set out in the
+[code signing policy](https://mahi-bd.github.io/WinlyStart/code-signing-policy.html).
+
 ## Privacy
 
 Winly Start collects nothing — no telemetry, no analytics, no accounts. Everything stays in

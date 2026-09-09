@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code Signing Policy · Winly Start</title>
+<meta name="description" content="How Winly Start releases are built, reviewed, approved and code-signed, and who is allowed to do it.">
+<link rel="icon" href="favicon.png">
+<style>
+  :root{
+    --bg:#f3f3f3; --card:#fff; --border:#e3e3e3; --text:#1b1b1b; --muted:#616161; --accent:#0078d4;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1b1b1b; --card:#242424; --border:#3a3a3a; --text:#f2f2f2; --muted:#a6a6a6; --accent:#4cadff; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:16px/1.65 "Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 20px 72px}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
+  .logo{width:56px;height:56px;border-radius:12px;flex:0 0 auto}
+  h1{font-size:30px;margin:0;font-weight:600;letter-spacing:-.2px}
+  .sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+  .lead{background:var(--card);border:1px solid var(--border);border-radius:10px;
+        padding:18px 20px;margin:28px 0;font-size:17px;font-weight:600}
+  h2{font-size:19px;margin:34px 0 10px;font-weight:600}
+  h3{font-size:16px;margin:22px 0 6px;font-weight:600}
+  p{margin:12px 0}
+  ul{margin:12px 0;padding-left:22px}
+  li{margin:6px 0}
+  code{background:var(--card);border:1px solid var(--border);border-radius:5px;
+       padding:1px 6px;font-family:Consolas,"Cascadia Mono",monospace;font-size:14px}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:15px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-weight:600}
+  a{color:var(--accent)}
+  footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="favicon.png" alt="" onerror="this.style.display='none'">
+    <div>
+      <h1>Code Signing Policy</h1>
+      <p class="sub">Winly Start · last updated 9 September 2026</p>
+    </div>
+  </header>
+
+  <div class="lead">
+    Every Winly Start binary we publish is built by a public CI workflow from a public commit, and
+    signed only after a human approves that specific build.
+  </div>
+
+  <h2>Team roles</h2>
+
+  <p>Winly Start is a small project, so the roles below describe responsibilities rather than a large
+  team. All accounts holding any of these roles have multi-factor authentication enabled.</p>
+
+  <table>
+    <tr><th>Role</th><th>Who</th><th>What they may do</th></tr>
+    <tr>
+      <td><strong>Authors</strong></td>
+      <td><a href="https://github.com/Mahi-BD">Mahi-BD</a></td>
+      <td>Commit to <code>main</code> in the
+        <a href="https://github.com/Mahi-BD/WinlyStart">WinlyStart</a> repository.</td>
+    </tr>
+    <tr>
+      <td><strong>Reviewers</strong></td>
+      <td>Mahi-BD</td>
+      <td>Review every contribution that comes from outside the project before it is merged.
+        No external pull request is merged without review.</td>
+    </tr>
+    <tr>
+      <td><strong>Approvers</strong></td>
+      <td>Mahi-BD</td>
+      <td>Approve each individual signing request. Approval is per build, never standing.</td>
+    </tr>
+  </table>
+
+  <h2>How a signed release is produced</h2>
+
+  <ol>
+    <li>A release is cut by pushing a <code>v*</code> tag to the public repository.</li>
+    <li>GitHub Actions builds it on a clean hosted runner directly from that tagged commit —
+      see <a href="https://github.com/Mahi-BD/WinlyStart/blob/main/.github/workflows/build.yml"><code>.github/workflows/build.yml</code></a>.
+      Nothing is ever built or uploaded from a developer machine.</li>
+    <li>The build produces the application executables and the Inno Setup installer. The application
+      executables are signed <em>before</em> the installer is assembled, because the installer embeds
+      one of them; the installer is signed afterwards.</li>
+    <li>An approver reviews and approves the signing request for that specific build.</li>
+    <li>The workflow verifies every signature with <code>signtool verify /pa</code> and fails the
+      build if any file is unsigned.</li>
+    <li>The signed artifacts are attached to the GitHub release.</li>
+  </ol>
+
+  <p>Signing credentials live only in the CI provider's secret store and in the signing service. They
+  are never present on a developer machine and never in the repository.</p>
+
+  <h2>What we sign</h2>
+
+  <p>We sign only binaries built from our own source, in this repository. We do not sign third-party
+  or upstream binaries. Every signed file carries product name, version, company and copyright in its
+  version resources.</p>
+
+  <h2>Privacy</h2>
+
+  <p><strong>Winly Start collects nothing.</strong> There is no telemetry, no analytics, no
+  advertising, no accounts and no crash reporting. Settings and layout stay in
+  <code>%LocalAppData%\WinlyStart</code> on the user's own machine. The only network request the app
+  can make is to a website the user chooses to add as a tile, in order to read that site's icon and
+  preview image. Full details are in the
+  <a href="privacy-policy.html">privacy policy</a>.</p>
+
+  <h2>Changes to the user's system</h2>
+
+  <p>Winly Start is a per-user install and never asks for administrator rights. It writes only to
+  <code>%LocalAppData%\WinlyStart</code>, plus a single optional
+  <code>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</code> value if the user turns on
+  "Start with Windows". It installs no drivers and no services, never injects into other processes,
+  and never patches system files.</p>
+
+  <p>To intercept the Start button and the Windows key it installs two ordinary user-mode hooks
+  (<code>WH_KEYBOARD_LL</code> and <code>WH_MOUSE_LL</code>) inside its own process. <strong>No
+  keystroke is logged, stored or transmitted</strong> — the keyboard hook checks only whether the
+  pressed key is the Windows key and passes everything else straight through. Closing the app removes
+  the hooks immediately and Windows 11 behaves exactly as before.</p>
+
+  <h2>Uninstalling</h2>
+
+  <p>Windows Settings → Apps → Winly Start → Uninstall, or the entry in Add/Remove Programs. The
+  portable build is removed by deleting its folder. Uninstalling leaves your settings and tile layout
+  in <code>%LocalAppData%\WinlyStart</code>; delete that folder to remove them too.</p>
+
+  <h2>Reporting a problem</h2>
+
+  <p>Security concerns, suspected misuse of our signing certificate, or Code of Conduct complaints:
+  <a href="https://github.com/Mahi-BD/WinlyStart/issues">github.com/Mahi-BD/WinlyStart/issues</a>.
+  We will investigate and assist in verifying any complaint.</p>
+
+  <footer>
+    <a href="./">Winly Start</a> ·
+    <a href="privacy-policy.html">Privacy policy</a> ·
+    <a href="https://github.com/Mahi-BD/WinlyStart">Source</a> ·
+    MIT licence. Not affiliated with Microsoft.
+  </footer>
+</div>
+</body>
+</html>

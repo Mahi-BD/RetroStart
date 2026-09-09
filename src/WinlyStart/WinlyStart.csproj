@@ -11,11 +11,16 @@
     <AssemblyName>WinlyStart</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets/WinlyStart.ico</ApplicationIcon>
+    <!-- Version info is stamped into the PE resources. Code-signing programs (the Microsoft Store
+         and the SignPath Foundation both) require a signed binary to carry a product name and a
+         version, so keep every field below populated. -->
     <Version>1.5.1</Version>
     <Authors>Winly Start contributors</Authors>
+    <Company>Winly Start contributors</Company>
     <Product>Winly Start</Product>
+    <AssemblyTitle>Winly Start</AssemblyTitle>
     <Description>The Windows 10 Start menu, back on Windows 11.</Description>
-    <Copyright>MIT License</Copyright>
+    <Copyright>© 2026 Winly Start contributors. MIT License.</Copyright>
     <!-- lets the project compile on Linux/macOS CI boxes; it only runs on Windows -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <!-- memory / size discipline -->
